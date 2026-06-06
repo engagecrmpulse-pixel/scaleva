@@ -1,14 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateOutreachMessage } from "@/lib/claude";
+import { generateOutreachMessage, type OutreachParams } from "@/lib/claude";
 import { formatCurrency, totalSpend } from "@/utils/helpers";
 
 /**
  * POST /api/messages/generate
- * Body: { customerId: string }
- * Generates (but does not send) a personalized outreach message for a
- * customer using Claude. Auth + ownership are enforced via RLS.
+ *
+ * Two modes (auth required for both):
+ *
+ * 1. DB mode — Body: { customerId: string }
+ *    Looks the customer + business up in the database (ownership enforced via
+ *    RLS) and generates a personalized outreach message.
+ *
+ * 2. Preview mode — Body: { preview: OutreachParams }
+ *    Generates a message directly from the supplied params without touching
+ *    the database. Used by the onboarding wizard's "Preview AI Message" step,
+ *    where the business and customers only exist in client state and have not
+ *    been persisted yet.
+ *
+ * Either way the response is { message: string } or an { error, detail }.
  */
+interface GenerateRequestBody {
+  customerId?: string;
+  preview?: Partial<OutreachParams>;
+}
+
 export async function POST(request: NextRequest) {
   const supabase = createClient();
 
@@ -20,16 +36,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { customerId?: string };
+  let body: GenerateRequestBody;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  // ---- Mode 2: inline preview (no DB lookup) ----------------------------
+  if (body.preview) {
+    const { customerName, businessName, industry, voice, goal, context } =
+      body.preview;
+
+    if (!customerName || !businessName) {
+      return NextResponse.json(
+        { error: "preview requires at least customerName and businessName" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const message = await generateOutreachMessage({
+        customerName,
+        businessName,
+        industry: industry ?? "small business",
+        voice: voice ?? "friendly",
+        goal: goal ?? "re-engage the customer",
+        context,
+      });
+      return NextResponse.json({ message });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : "Unknown error";
+      return NextResponse.json(
+        { error: "Failed to generate message", detail },
+        { status: 502 }
+      );
+    }
+  }
+
+  // ---- Mode 1: existing DB-backed path ----------------------------------
   if (!body.customerId) {
     return NextResponse.json(
-      { error: "customerId is required" },
+      { error: "customerId or preview is required" },
       { status: 400 }
     );
   }
