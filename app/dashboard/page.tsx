@@ -15,11 +15,18 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const { data: business } = await supabase
+  // Pick the most recent business. We intentionally avoid .maybeSingle() here:
+  // it throws when more than one row matches, which (if an account ever ends up
+  // with multiple businesses) would make this redirect to /onboarding and cause
+  // a /dashboard <-> /onboarding redirect loop.
+  const { data: businesses } = await supabase
     .from("businesses")
     .select("*")
     .eq("owner_id", user.id)
-    .maybeSingle();
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  const business = businesses?.[0];
 
   if (!business) {
     redirect("/onboarding");

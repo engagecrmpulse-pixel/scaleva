@@ -9,20 +9,53 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
-  // If the business is already set up, skip onboarding.
+  // If the business is already set up, skip straight to the dashboard.
+  // This must never hang: any error (or a slow request) falls through to
+  // showing the wizard so the user is never stuck on a loading screen.
   useEffect(() => {
+    let active = true;
     const supabase = createClient();
-    supabase
-      .from("businesses")
-      .select("id")
-      .limit(1)
-      .then(({ data }) => {
+
+    async function check() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!active) return;
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
+
+        const { data } = await supabase
+          .from("businesses")
+          .select("id")
+          .eq("owner_id", user.id)
+          .limit(1);
+
+        if (!active) return;
         if (data && data.length > 0) {
           router.replace("/dashboard");
-        } else {
-          setChecking(false);
+          return; // keep showing "Loading…" while we navigate away
         }
-      });
+      } catch {
+        // Ignore and fall through to the wizard.
+      }
+      if (active) setChecking(false);
+    }
+
+    // Safety net: never leave the user stuck on the loading screen.
+    const timeout = setTimeout(() => {
+      if (active) setChecking(false);
+    }, 5000);
+
+    void check();
+
+    return () => {
+      active = false;
+      clearTimeout(timeout);
+    };
   }, [router]);
 
   if (checking) {
