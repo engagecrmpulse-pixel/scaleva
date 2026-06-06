@@ -61,6 +61,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["businesses"]["Insert"]>;
+        Relationships: [];
       };
       customers: {
         Row: {
@@ -84,6 +85,7 @@ export interface Database {
           next_contact_date?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
+        Relationships: [];
       };
       messages: {
         Row: {
@@ -105,6 +107,7 @@ export interface Database {
           direction?: MessageDirection;
         };
         Update: Partial<Database["public"]["Tables"]["messages"]["Insert"]>;
+        Relationships: [];
       };
       interactions: {
         Row: {
@@ -122,6 +125,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["interactions"]["Insert"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

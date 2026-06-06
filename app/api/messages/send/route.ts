@@ -2,6 +2,25 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/twilio";
 import { isValidPhone, normalizePhone } from "@/utils/helpers";
+import type { MessageStatus } from "@/utils/database.types";
+
+/**
+ * Twilio reports a wide range of message statuses (queued, sending, sent,
+ * delivered, undelivered, failed, ...). Map them onto the narrower set the
+ * messages table stores; anything we don't explicitly track is recorded as
+ * "sent" since the Twilio call itself succeeded.
+ */
+function toMessageStatus(twilioStatus: string): MessageStatus {
+  switch (twilioStatus) {
+    case "queued":
+    case "delivered":
+    case "failed":
+    case "received":
+      return twilioStatus;
+    default:
+      return "sent";
+  }
+}
 
 /**
  * POST /api/messages/send
@@ -50,13 +69,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let status = "sent";
+  let status: MessageStatus = "sent";
   try {
     const result = await sendSms({
       to: normalizePhone(customer.phone),
       body: body.content,
     });
-    status = result.status;
+    status = toMessageStatus(result.status);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown error";
     // Log the failed attempt so it shows up in history.
