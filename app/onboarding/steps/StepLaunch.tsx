@@ -99,12 +99,12 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Ready to launch</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <h2 className="text-xl font-bold tracking-tight text-gray-900">Ready to launch</h2>
+      <p className="mt-1.5 text-sm text-gray-500">
         Review your setup, then go live.
       </p>
 
-      <dl className="mt-6 divide-y divide-gray-100 rounded-xl border border-gray-200">
+      <dl className="mt-6 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-gray-50/50">
         <SummaryRow label="Business name" value={state.businessName || "—"} />
         <SummaryRow label="Industry" value={state.industry} />
         <SummaryRow
@@ -134,7 +134,7 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
               Launching…
             </span>
           ) : (
-            "🚀 Go Live"
+            "Go live"
           )}
         </Button>
       </div>

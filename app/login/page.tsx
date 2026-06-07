@@ -4,8 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,10 +18,7 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
 
@@ -37,54 +32,135 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <Link href="/" className="text-2xl font-bold text-brand-700">
+    <div className="grid min-h-screen lg:grid-cols-[480px_1fr]">
+      {/* Left panel */}
+      <div className="relative hidden flex-col bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-10 lg:flex">
+        <div
+          aria-hidden
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className="relative">
+          <Link href="/" className="text-base font-semibold text-white">
             Scaleva
           </Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">
-            Welcome back
-          </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Log in to your account to continue.
-          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Email"
-            type="email"
-            name="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            label="Password"
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+        <div className="relative mt-auto">
+          <blockquote className="space-y-4">
+            <p className="text-2xl font-semibold leading-snug text-white">
+              &ldquo;We&apos;re seeing 3&times; more repeat customers since switching
+              to Scaleva. The AI just knows what to say.&rdquo;
+            </p>
+            <footer className="text-sm text-slate-400">
+              — Maria G., owner of Blossom Salon
+            </footer>
+          </blockquote>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-
-          <Button type="submit" disabled={loading} className="mt-2 w-full">
-            {loading ? "Logging in…" : "Log in"}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-brand-600 hover:text-brand-700">
-            Sign up
-          </Link>
-        </p>
+          <ul className="mt-10 space-y-3">
+            {[
+              "AI writes every message in your voice",
+              "Syncs with Square, Stripe, Shopify & more",
+              "Set goals once — runs on autopilot",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3 text-sm text-slate-300">
+                <svg className="h-4 w-4 flex-shrink-0 text-indigo-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-    </main>
+
+      {/* Right panel */}
+      <div className="flex items-center justify-center bg-white px-6 py-16">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <Link href="/" className="text-sm font-medium text-gray-900 lg:hidden">
+              Scaleva
+            </Link>
+            <h1 className="mt-4 text-2xl font-bold tracking-tight text-gray-900 lg:mt-0">
+              Welcome back
+            </h1>
+            <p className="mt-1.5 text-sm text-gray-500">
+              Log in to your account to continue.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="you@company.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p className="text-xs text-red-700">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
+                  Logging in…
+                </>
+              ) : (
+                "Log in"
+              )}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-gray-500">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-700">
+              Sign up
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

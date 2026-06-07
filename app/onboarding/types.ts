@@ -2,7 +2,16 @@
  * Shared types and option constants for the onboarding wizard.
  * The wizard keeps everything in React state until the final "Launch" step,
  * at which point it is persisted to Supabase.
+ *
+ * Customer-import primitives now live in lib/import so the dashboard can reuse
+ * them; they are re-exported here for the wizard's existing import sites.
  */
+export {
+  type ImportedCustomer,
+  emptyCustomer,
+  CSV_COLUMNS,
+} from "@/lib/import/types";
+import type { ImportedCustomer } from "@/lib/import/types";
 
 export type DataSource =
   | "square"
@@ -12,16 +21,6 @@ export type DataSource =
   | "hubspot"
   | "csv"
   | "manual";
-
-/** A customer collected during onboarding, before it is saved to Supabase. */
-export interface ImportedCustomer {
-  name: string;
-  phone: string;
-  email: string;
-  /** ISO date string (yyyy-mm-dd) or "". */
-  last_purchase: string;
-  spend_amount: number;
-}
 
 export interface WizardState {
   dataSource: DataSource | null;
@@ -134,25 +133,6 @@ export const CADENCES = [
   "Bi-weekly",
   "Monthly",
 ];
-
-/** CSV columns the upload step expects, in order. */
-export const CSV_COLUMNS = [
-  "name",
-  "phone",
-  "email",
-  "last_purchase",
-  "spend_amount",
-] as const;
-
-export function emptyCustomer(): ImportedCustomer {
-  return {
-    name: "",
-    phone: "",
-    email: "",
-    last_purchase: "",
-    spend_amount: 0,
-  };
-}
 
 export function initialWizardState(): WizardState {
   return {

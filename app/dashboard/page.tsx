@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Navbar } from "@/components/Navbar";
 import { DashboardClient } from "./DashboardClient";
 import type { Customer, Message } from "@/utils/database.types";
 
@@ -50,18 +49,16 @@ export default async function DashboardPage() {
   const messageList: Message[] = messages ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar email={user.email} />
-      <DashboardClient
-        businessId={business.id}
-        businessName={business.name}
-        industry={business.industry}
-        voice={business.voice}
-        initialAutopilot={business.config?.autopilot ?? false}
-        config={business.config ?? {}}
-        initialCustomers={customerList}
-        initialMessages={messageList}
-      />
-    </div>
+    <DashboardClient
+      businessId={business.id}
+      businessName={business.name}
+      industry={business.industry}
+      voice={business.voice}
+      userEmail={user.email}
+      initialAutopilot={business.config?.autopilot ?? false}
+      config={business.config ?? {}}
+      initialCustomers={customerList}
+      initialMessages={messageList}
+    />
   );
 }

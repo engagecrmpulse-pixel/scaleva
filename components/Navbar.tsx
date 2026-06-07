@@ -24,15 +24,15 @@ export function Navbar({ email, isAdmin }: NavbarProps) {
     <header className="border-b border-gray-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-lg font-bold text-brand-700">
+          <Link href="/dashboard" className="text-base font-semibold tracking-tight text-gray-900">
             Scaleva
           </Link>
-          <nav className="hidden items-center gap-4 text-sm text-gray-600 sm:flex">
-            <Link href="/dashboard" className="hover:text-gray-900">
+          <nav className="hidden items-center gap-4 text-sm text-gray-500 sm:flex">
+            <Link href="/dashboard" className="transition-colors hover:text-gray-900">
               Dashboard
             </Link>
             {isAdmin && (
-              <Link href="/admin" className="hover:text-gray-900">
+              <Link href="/admin" className="transition-colors hover:text-gray-900">
                 Admin
               </Link>
             )}
@@ -40,9 +40,7 @@ export function Navbar({ email, isAdmin }: NavbarProps) {
         </div>
         <div className="flex items-center gap-3">
           {email && (
-            <span className="hidden text-sm text-gray-500 sm:inline">
-              {email}
-            </span>
+            <span className="hidden text-xs text-gray-400 sm:inline">{email}</span>
           )}
           <Button variant="secondary" size="sm" onClick={handleSignOut}>
             Sign out

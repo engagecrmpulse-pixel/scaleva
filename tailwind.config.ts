@@ -21,6 +21,15 @@ const config: Config = {
           900: "#312e81",
         },
       },
+      keyframes: {
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+      },
+      animation: {
+        fadeUp: "fadeUp 0.4s ease-out forwards",
+      },
     },
   },
   plugins: [],

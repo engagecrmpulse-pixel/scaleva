@@ -61,7 +61,7 @@ export default function OnboardingPage() {
   if (checking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-sm text-gray-500">Loading…</p>
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-gray-200 border-t-indigo-600" aria-hidden />
       </main>
     );
   }
@@ -69,8 +69,8 @@ export default function OnboardingPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center px-4 py-3">
-          <span className="text-lg font-bold text-brand-700">Scaleva</span>
+        <div className="mx-auto flex max-w-2xl items-center px-6 py-4">
+          <span className="text-sm font-semibold text-gray-900">Scaleva</span>
         </div>
       </div>
       <Wizard />
