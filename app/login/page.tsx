@@ -31,71 +31,53 @@ export default function LoginPage() {
     router.refresh();
   }
 
+  const inputClass = (hasError: boolean) =>
+    `w-full rounded-btn border bg-base px-3 py-2.5 text-sm text-content placeholder:text-content-muted/60 focus:outline-none focus:ring-1 transition-colors ${
+      hasError
+        ? "border-danger focus:border-danger focus:ring-danger"
+        : "border-line focus:border-accent focus:ring-accent"
+    }`;
+
   return (
-    <div className="grid min-h-screen lg:grid-cols-[480px_1fr]">
+    <div className="grid min-h-screen lg:grid-cols-[420px_1fr]">
       {/* Left panel */}
-      <div className="relative hidden flex-col bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-10 lg:flex">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-        <div className="relative">
-          <Link href="/" className="text-base font-semibold text-white">
-            Scaleva
-          </Link>
-        </div>
-
-        <div className="relative mt-auto">
-          <blockquote className="space-y-4">
-            <p className="text-2xl font-semibold leading-snug text-white">
-              &ldquo;We&apos;re seeing 3&times; more repeat customers since switching
-              to Scaleva. The AI just knows what to say.&rdquo;
-            </p>
-            <footer className="text-sm text-slate-400">
-              — Maria G., owner of Blossom Salon
-            </footer>
-          </blockquote>
-
-          <ul className="mt-10 space-y-3">
-            {[
-              "AI writes every message in your voice",
-              "Syncs with Square, Stripe, Shopify & more",
-              "Set goals once — runs on autopilot",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-sm text-slate-300">
-                <svg className="h-4 w-4 flex-shrink-0 text-indigo-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                {item}
-              </li>
-            ))}
-          </ul>
+      <div className="hidden flex-col bg-base px-10 py-10 lg:flex border-r border-line">
+        <Link
+          href="/"
+          className="font-heading text-sm font-semibold tracking-tight text-content"
+        >
+          Scaleva
+        </Link>
+        <div className="mt-auto pb-16">
+          <p className="font-heading text-xl font-semibold leading-snug tracking-[-0.02em] text-content">
+            Your customers forget you exist. Scaleva fixes that.
+          </p>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex items-center justify-center bg-white px-6 py-16">
+      <div className="flex items-center justify-center bg-surface px-6 py-16">
         <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <Link href="/" className="text-sm font-medium text-gray-900 lg:hidden">
-              Scaleva
-            </Link>
-            <h1 className="mt-4 text-2xl font-bold tracking-tight text-gray-900 lg:mt-0">
-              Welcome back
-            </h1>
-            <p className="mt-1.5 text-sm text-gray-500">
-              Log in to your account to continue.
-            </p>
-          </div>
+          <Link
+            href="/"
+            className="font-heading text-sm font-semibold tracking-tight text-content lg:hidden"
+          >
+            Scaleva
+          </Link>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <h1 className="mt-8 font-heading text-2xl font-semibold tracking-[-0.02em] text-content lg:mt-0">
+            Log in
+          </h1>
+          <p className="mt-1.5 text-sm text-content-muted">
+            Enter your credentials to continue.
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="mb-1.5 block text-xs font-medium text-content-muted"
+              >
                 Email
               </label>
               <input
@@ -106,13 +88,16 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={inputClass(!!error)}
                 placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="mb-1.5 block text-xs font-medium text-content-muted"
+              >
                 Password
               </label>
               <input
@@ -123,29 +108,25 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={inputClass(!!error)}
                 placeholder="••••••••"
               />
             </div>
 
-            {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
-                <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-                <p className="text-xs text-red-700">{error}</p>
-              </div>
-            )}
+            {error && <p className="text-xs text-danger">{error}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-btn bg-accent text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? (
                 <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
-                  Logging in…
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                    aria-hidden
+                  />
+                  Logging in...
                 </>
               ) : (
                 "Log in"
@@ -153,10 +134,13 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-content-muted">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-medium text-indigo-600 hover:text-indigo-700">
-              Sign up
+            <Link
+              href="/signup"
+              className="text-content transition-colors hover:text-accent"
+            >
+              Get started free
             </Link>
           </p>
         </div>

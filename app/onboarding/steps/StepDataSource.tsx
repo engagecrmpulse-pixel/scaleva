@@ -56,10 +56,10 @@ function DataSourceIcon({ id }: { id: DataSource }) {
 export function StepDataSource({ state, update }: StepProps) {
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-gray-900">
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
         Where do your customers come from?
       </h2>
-      <p className="mt-1.5 text-sm text-gray-500">
+      <p className="mt-1.5 text-sm text-content-muted">
         Pick a source to import your customer list. You can change this later.
       </p>
 
@@ -72,27 +72,27 @@ export function StepDataSource({ state, update }: StepProps) {
               type="button"
               onClick={() => update({ dataSource: source.id, connected: false })}
               className={cn(
-                "group flex flex-col items-start rounded-xl border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2",
+                "group flex flex-col items-start rounded-card border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base",
                 selected
-                  ? "border-indigo-600 bg-indigo-50 ring-1 ring-indigo-600"
-                  : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                  ? "border-accent bg-accent/5"
+                  : "border-line bg-base hover:border-content-muted"
               )}
               aria-pressed={selected}
             >
               <div
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+                  "flex h-9 w-9 items-center justify-center rounded-btn transition-colors",
                   selected
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-500 group-hover:bg-gray-200"
+                    ? "bg-accent text-white"
+                    : "bg-surface text-content-muted group-hover:text-content"
                 )}
               >
                 <DataSourceIcon id={source.id} />
               </div>
-              <span className="mt-3 text-sm font-semibold text-gray-900">
+              <span className="mt-3 text-sm font-semibold text-content">
                 {source.name}
               </span>
-              <span className="mt-0.5 text-xs leading-relaxed text-gray-500">
+              <span className="mt-0.5 text-xs leading-relaxed text-content-muted">
                 {source.description}
               </span>
             </button>

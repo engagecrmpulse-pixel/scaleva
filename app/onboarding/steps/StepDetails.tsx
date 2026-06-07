@@ -6,7 +6,7 @@ import { CADENCES, GOALS, INDUSTRIES, VOICES } from "../types";
 import type { StepProps } from "../Wizard";
 
 const selectClass =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500";
+  "w-full rounded-btn border border-line bg-surface px-3 py-2 text-sm text-content focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 
 export function StepDetails({ state, update }: StepProps) {
   function toggleGoal(goal: string) {
@@ -18,9 +18,11 @@ export function StepDetails({ state, update }: StepProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Tell us about your business</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        This shapes how the AI writes on your behalf.
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+        Tell us about your business
+      </h2>
+      <p className="mt-1 text-sm text-content-muted">
+        This shapes how Scaleva writes on your behalf.
       </p>
 
       <div className="mt-6 flex flex-col gap-5">
@@ -32,20 +34,20 @@ export function StepDetails({ state, update }: StepProps) {
         />
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">Industry</label>
+          <label className="text-xs font-medium text-content-muted">Industry</label>
           <select
             className={selectClass}
             value={state.industry}
             onChange={(e) => update({ industry: e.target.value })}
           >
             {INDUSTRIES.map((option) => (
-              <option key={option}>{option}</option>
+              <option key={option} className="bg-surface text-content">{option}</option>
             ))}
           </select>
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-gray-700">Brand voice</span>
+          <span className="text-xs font-medium text-content-muted">Brand voice</span>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {VOICES.map((option) => {
               const selected = state.voice === option;
@@ -53,10 +55,10 @@ export function StepDetails({ state, update }: StepProps) {
                 <label
                   key={option}
                   className={cn(
-                    "flex cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-sm transition-colors",
+                    "flex cursor-pointer items-center justify-center rounded-btn border px-3 py-2 text-sm transition-colors",
                     selected
-                      ? "border-brand-600 bg-brand-50 text-brand-700"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      ? "border-accent bg-accent/5 text-content"
+                      : "border-line text-content-muted hover:border-content-muted hover:text-content"
                   )}
                 >
                   <input
@@ -75,7 +77,7 @@ export function StepDetails({ state, update }: StepProps) {
         </div>
 
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-xs font-medium text-content-muted">
             Business goals
           </span>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -85,17 +87,17 @@ export function StepDetails({ state, update }: StepProps) {
                 <label
                   key={goal}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
+                    "flex cursor-pointer items-center gap-2 rounded-btn border px-3 py-2 text-sm transition-colors",
                     checked
-                      ? "border-brand-600 bg-brand-50 text-brand-700"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      ? "border-accent bg-accent/5 text-content"
+                      : "border-line text-content-muted hover:border-content-muted hover:text-content"
                   )}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleGoal(goal)}
-                    className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    className="h-4 w-4 rounded border-line bg-base text-accent focus:ring-accent"
                   />
                   {goal}
                 </label>
@@ -105,7 +107,7 @@ export function StepDetails({ state, update }: StepProps) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-xs font-medium text-content-muted">
             Message cadence
           </label>
           <select
@@ -114,7 +116,7 @@ export function StepDetails({ state, update }: StepProps) {
             onChange={(e) => update({ cadence: e.target.value })}
           >
             {CADENCES.map((option) => (
-              <option key={option}>{option}</option>
+              <option key={option} className="bg-surface text-content">{option}</option>
             ))}
           </select>
         </div>
@@ -122,14 +124,14 @@ export function StepDetails({ state, update }: StepProps) {
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="customInstructions"
-            className="text-sm font-medium text-gray-700"
+            className="text-xs font-medium text-content-muted"
           >
-            Custom AI instructions
+            Custom instructions
           </label>
           <textarea
             id="customInstructions"
             rows={3}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-btn border border-line bg-surface px-3 py-2 text-sm text-content placeholder:text-content-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
             placeholder='e.g. "Always mention our loyalty program" or "Focus on customers who haven&apos;t visited in 30 days"'
             value={state.customInstructions}
             onChange={(e) => update({ customInstructions: e.target.value })}

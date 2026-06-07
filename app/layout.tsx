@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-inter",
+  weight: ["400", "500"],
+  variable: "--font-dm-sans",
 });
 
 export const metadata: Metadata = {
-  title: "Scaleva — AI-powered SMS CRM",
+  title: "Scaleva — SMS CRM for small businesses",
   description:
-    "Scaleva sends personalized SMS outreach to your customers on autopilot, powered by AI.",
+    "Scaleva keeps your customers coming back. Personalized SMS outreach, written for each customer, sent automatically.",
 };
 
 export default function RootLayout({
@@ -20,8 +22,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className={`${inter.className} antialiased`}>{children}</body>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${GeistMono.variable} ${dmSans.variable}`}
+    >
+      <body className="font-sans antialiased bg-base text-content">
+        {children}
+      </body>
     </html>
   );
 }

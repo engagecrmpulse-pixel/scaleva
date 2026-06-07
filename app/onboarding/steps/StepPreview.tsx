@@ -6,10 +6,7 @@ import { formatCurrency, formatDate } from "@/utils/helpers";
 import type { OutreachParams } from "@/lib/claude";
 import type { StepProps } from "../Wizard";
 
-/** Builds the inline preview payload from wizard state + first customer. */
-function buildPreviewParams(
-  state: StepProps["state"]
-): OutreachParams | null {
+function buildPreviewParams(state: StepProps["state"]): OutreachParams | null {
   const customer = state.customers[0];
   if (!customer) return null;
 
@@ -67,7 +64,6 @@ export function StepPreview({ state, update }: StepProps) {
     }
   }, [state, update]);
 
-  // Auto-generate the first time we land on this step with no message yet.
   useEffect(() => {
     if (customer && !state.previewMessage && !loading) {
       void generate();
@@ -77,8 +73,8 @@ export function StepPreview({ state, update }: StepProps) {
 
   if (!customer) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
-        <p className="text-sm text-gray-600">
+      <div className="rounded-card border border-dashed border-line bg-base px-6 py-12 text-center">
+        <p className="text-sm text-content-muted">
           No customers imported yet. Go back to the connect step and add at
           least one customer to preview a message.
         </p>
@@ -88,35 +84,36 @@ export function StepPreview({ state, update }: StepProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Preview your first message</h2>
-      <p className="mt-1 text-sm text-gray-500">
-        Here&apos;s how the AI will write to your customers.
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+        Preview your first message
+      </h2>
+      <p className="mt-1 text-sm text-content-muted">
+        Here&apos;s how Scaleva will write to your customers.
       </p>
 
-      <div className="mt-6 rounded-xl border border-gray-200 p-5">
+      <div className="mt-6 rounded-card border border-line bg-base p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <p className="font-semibold text-gray-900">{customer.name}</p>
-            <p className="text-xs text-gray-500">
-              Last purchase: {formatDate(customer.last_purchase || null)} ·{" "}
-              {formatCurrency(customer.spend_amount || 0)}
+            <p className="font-medium text-content">{customer.name}</p>
+            <p className="text-xs text-content-muted">
+              Last purchase: {formatDate(customer.last_purchase || null)}{" "}
+              &middot; {formatCurrency(customer.spend_amount || 0)}
             </p>
           </div>
         </div>
 
-        {/* Chat bubble */}
         <div className="flex justify-start">
-          <div className="max-w-md rounded-2xl rounded-bl-sm bg-brand-600 px-4 py-3 text-sm text-white">
+          <div className="max-w-md rounded-card rounded-bl-sm bg-accent/10 border border-accent/20 px-4 py-3 text-sm text-content">
             {loading ? (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 text-content-muted">
                 <Spinner />
-                Writing…
+                Writing...
               </span>
             ) : editing ? (
               <textarea
                 autoFocus
                 rows={4}
-                className="w-full resize-none rounded-md bg-white/10 p-2 text-white placeholder:text-white/60 focus:outline-none"
+                className="w-full resize-none rounded-btn bg-surface/50 p-2 text-content placeholder:text-content-muted/60 focus:outline-none"
                 value={state.previewMessage}
                 onChange={(e) => update({ previewMessage: e.target.value })}
               />
@@ -126,15 +123,10 @@ export function StepPreview({ state, update }: StepProps) {
           </div>
         </div>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-xs text-danger">{error}</p>}
 
         <div className="mt-4 flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={generate}
-            disabled={loading}
-          >
+          <Button variant="secondary" size="sm" onClick={generate} disabled={loading}>
             Regenerate
           </Button>
           <Button
@@ -143,7 +135,7 @@ export function StepPreview({ state, update }: StepProps) {
             onClick={() => setEditing((v) => !v)}
             disabled={loading || !state.previewMessage}
           >
-            {editing ? "Done editing" : "Edit"}
+            {editing ? "Done" : "Edit"}
           </Button>
         </div>
       </div>
@@ -154,7 +146,7 @@ export function StepPreview({ state, update }: StepProps) {
 function Spinner() {
   return (
     <span
-      className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+      className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-content-muted/30 border-t-content-muted"
       aria-hidden
     />
   );

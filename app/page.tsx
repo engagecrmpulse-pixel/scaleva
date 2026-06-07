@@ -1,206 +1,222 @@
 import Link from "next/link";
 
-const features = [
-  {
-    icon: (
-      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-      </svg>
-    ),
-    title: "AI-written messages",
-    body: "No templates. Claude writes a personal SMS for each customer in your brand voice, shaped by their real purchase history.",
-  },
-  {
-    icon: (
-      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-      </svg>
-    ),
-    title: "Knows your customers",
-    body: "Connect Square, Stripe, Shopify, or upload a CSV. Every message is personalized with what they bought and when.",
-  },
-  {
-    icon: (
-      <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-      </svg>
-    ),
-    title: "Runs on autopilot",
-    body: "Set your goals once. Scaleva schedules follow-ups, tracks responses, and keeps customers coming back automatically.",
-  },
-];
-
-const stats = [
-  { value: "500+", label: "businesses" },
-  { value: "4.9", label: "avg. rating" },
-  { value: "3×", label: "repeat purchases" },
-];
-
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <header className="absolute inset-x-0 top-0 z-10">
-        <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <span className="text-base font-semibold text-white">Scaleva</span>
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-base text-content">
+      {/* Nav */}
+      <header className="border-b border-line">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-4">
+          <span className="font-heading text-sm font-semibold tracking-tight text-content">
+            Scaleva
+          </span>
+          <div className="flex items-center gap-4">
             <Link
               href="/login"
-              className="text-sm text-white/70 transition-colors hover:text-white"
+              className="text-sm text-content-muted transition-colors hover:text-content"
             >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="inline-flex h-9 items-center rounded-lg bg-white px-4 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:bg-gray-100"
+              className="inline-flex h-9 items-center rounded-btn bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
-              Get started
+              Get started free
             </Link>
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 px-6 pb-32 pt-40">
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right,#fff 1px,transparent 1px),linear-gradient(to bottom,#fff 1px,transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-
-        <div className="relative mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-indigo-300">
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
-            Powered by Claude AI
+      <section className="mx-auto max-w-[1200px] px-6 py-24 lg:py-32">
+        <div className="grid gap-16 lg:grid-cols-[60fr_40fr] lg:items-center">
+          {/* Left: copy */}
+          <div>
+            <h1 className="font-heading text-4xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-5xl lg:text-[56px]">
+              Your customers forget you exist.{" "}
+              <span className="text-content-muted">Scaleva fixes that.</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-base leading-relaxed text-content-muted">
+              Scaleva writes a personal SMS for each customer using their
+              purchase history and your brand voice, then sends it at the right
+              time. No templates. No blasting.
+            </p>
+            <div className="mt-8 flex items-center gap-4">
+              <Link
+                href="/signup"
+                className="inline-flex h-10 items-center rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
+              >
+                Get started free
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm text-content-muted transition-colors hover:text-content"
+              >
+                Log in
+              </Link>
+            </div>
           </div>
 
-          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-white sm:text-6xl">
-            Turn one-time buyers{" "}
-            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-              into loyal customers.
-            </span>
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400">
-            Scaleva writes personalized SMS messages for every customer — using
-            their purchase history and your brand voice — then sends them on
-            autopilot while you run your business.
-          </p>
-
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/signup"
-              className="inline-flex h-11 items-center rounded-lg bg-indigo-600 px-6 text-sm font-medium text-white shadow-lg shadow-indigo-900/50 transition-colors hover:bg-indigo-700"
-            >
-              Start free
-              <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex h-11 items-center rounded-lg border border-white/10 bg-white/5 px-6 text-sm font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-white/10"
-            >
-              Log in
-            </Link>
-          </div>
-
-          <div className="mt-16 grid grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-            {stats.map((stat) => (
-              <div key={stat.label} className="px-6 py-5">
-                <div className="text-2xl font-bold text-white">{stat.value}</div>
-                <div className="mt-0.5 text-xs text-slate-400">{stat.label}</div>
+          {/* Right: terminal */}
+          <div className="overflow-hidden rounded-card border border-line bg-surface font-mono text-xs">
+            <div className="flex items-center gap-1.5 border-b border-line px-4 py-3">
+              <span className="h-2.5 w-2.5 rounded-full bg-line" />
+              <span className="h-2.5 w-2.5 rounded-full bg-line" />
+              <span className="h-2.5 w-2.5 rounded-full bg-line" />
+            </div>
+            <div className="space-y-3 px-5 py-5 leading-relaxed">
+              <p>
+                <span className="text-content-muted">scaleva</span>{" "}
+                <span className="text-content-muted">~</span>{" "}
+                <span className="text-content">%</span>{" "}
+                <span className="text-content-muted">
+                  generate --customer &quot;Sarah M.&quot;
+                </span>
+              </p>
+              <div className="space-y-1 border-l border-line pl-4 text-content-muted">
+                <p>Customer: Sarah M.</p>
+                <p>Last visit: 47 days ago</p>
+                <p>Spent: $284.00</p>
               </div>
-            ))}
+              <p className="text-content-muted">Writing message...</p>
+              <div className="rounded-btn border border-line bg-base px-4 py-3 text-content">
+                &ldquo;Hey Sarah! It&apos;s been a little while since your last
+                visit. We&apos;ve got a few new things we think you&apos;ll love.
+                Come say hi this week.&rdquo;
+              </div>
+              <p>
+                <span className="text-accent">✓</span>{" "}
+                <span className="text-content-muted">
+                  Queued &middot; Sending tonight at 6pm
+                </span>
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <div className="mb-12 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Everything you need to keep customers coming back
-          </h2>
-          <p className="mt-3 text-base text-gray-500">
-            One platform. Import your customers, set your goals, and watch revenue grow.
-          </p>
-        </div>
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[1200px] px-6 py-24">
+          <div className="mb-12">
+            <h2 className="font-heading text-2xl font-semibold tracking-[-0.03em] text-content">
+              Built for businesses that rely on repeat customers
+            </h2>
+            <p className="mt-2 text-base text-content-muted">
+              Salons, restaurants, contractors. If customers come back, Scaleva
+              keeps them coming back.
+            </p>
+          </div>
 
-        <div className="grid gap-6 sm:grid-cols-3">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                {feature.icon}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:grid-rows-2">
+            {/* Large card */}
+            <div className="rounded-card border border-line bg-surface p-8 lg:col-span-2 lg:row-span-2">
+              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-btn border border-line text-content-muted">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
+                  />
+                </svg>
               </div>
-              <h3 className="mb-2 font-semibold text-gray-900">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-gray-500">{feature.body}</p>
+              <h3 className="font-heading text-xl font-semibold tracking-[-0.02em] text-content">
+                Knows your customers
+              </h3>
+              <p className="mt-3 max-w-md text-base leading-relaxed text-content-muted">
+                Connect Square, Stripe, Shopify, or upload a CSV. Every message
+                Scaleva writes is grounded in what that customer actually bought
+                and when they last visited.
+              </p>
+              <div className="mt-8 overflow-hidden rounded-btn border border-line bg-base px-4 py-4 font-mono text-xs text-content-muted">
+                <p className="mb-2 text-content-muted/50">// customer context</p>
+                <p>
+                  <span className="text-accent">name</span>: &ldquo;Maria
+                  C.&rdquo;
+                </p>
+                <p>
+                  <span className="text-accent">last_visit</span>: &ldquo;23
+                  days ago&rdquo;
+                </p>
+                <p>
+                  <span className="text-accent">spent</span>: &ldquo;$412.00&rdquo;
+                </p>
+                <p>
+                  <span className="text-accent">tags</span>: [&ldquo;regular&rdquo;,
+                  &ldquo;color-client&rdquo;]
+                </p>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* How it works */}
-      <section className="border-t border-gray-100 bg-gray-50 px-6 py-24">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Up and running in minutes
-          </h2>
-          <p className="mt-3 text-base text-gray-500">
-            No engineers needed. If you can upload a spreadsheet, you can use Scaleva.
-          </p>
-
-          <div className="mt-12 grid gap-8 text-left sm:grid-cols-3">
-            {[
-              { step: "01", title: "Connect your data", body: "Import customers from Square, Stripe, Shopify, Toast, HubSpot, or upload a CSV." },
-              { step: "02", title: "Set your goals", body: "Tell Scaleva your brand voice, industry, and what kind of messages to send." },
-              { step: "03", title: "Watch it work", body: "AI writes personalized messages. Approve, edit, or let autopilot handle everything." },
-            ].map((item) => (
-              <div key={item.step} className="flex gap-4">
-                <div className="flex-shrink-0 text-sm font-bold text-indigo-500">{item.step}</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">{item.body}</p>
-                </div>
+            {/* Card 2 */}
+            <div className="rounded-card border border-line bg-surface p-6">
+              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-btn border border-line text-content-muted">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+                  />
+                </svg>
               </div>
-            ))}
+              <h3 className="font-heading text-base font-semibold tracking-[-0.02em] text-content">
+                Writes in your voice
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-content-muted">
+                Tell Scaleva your industry and tone once. Every message sounds
+                like you wrote it, not a template.
+              </p>
+            </div>
+
+            {/* Card 3 */}
+            <div className="rounded-card border border-line bg-surface p-6">
+              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-btn border border-line text-content-muted">
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
+                  />
+                </svg>
+              </div>
+              <h3 className="font-heading text-base font-semibold tracking-[-0.02em] text-content">
+                Runs without you
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-content-muted">
+                Set your cadence and goals once. Scaleva handles the timing,
+                tracks replies, and never double-sends.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-            Ready to grow your business?
-          </h2>
-          <p className="mt-3 text-base text-gray-500">
-            Join hundreds of small businesses driving repeat revenue with Scaleva. Free to start.
-          </p>
-          <Link
-            href="/signup"
-            className="mt-8 inline-flex h-11 items-center rounded-lg bg-indigo-600 px-6 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
-          >
-            Get started for free
-            <svg className="ml-2 h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t border-gray-100 px-6 py-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <span className="text-sm font-medium text-gray-900">Scaleva</span>
-          <p className="text-xs text-gray-400">&copy; {new Date().getFullYear()} Scaleva. All rights reserved.</p>
+      <footer className="border-t border-line">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-6">
+          <span className="font-heading text-sm font-semibold text-content">
+            Scaleva
+          </span>
+          <p className="text-xs text-content-muted">
+            &copy; {new Date().getFullYear()} Scaleva
+          </p>
         </div>
       </footer>
     </div>

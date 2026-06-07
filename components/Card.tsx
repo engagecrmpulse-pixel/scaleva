@@ -7,10 +7,7 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "rounded-xl border border-gray-200 bg-white shadow-sm",
-        className
-      )}
+      className={cn("rounded-card border border-line bg-surface", className)}
       {...props}
     />
   );
@@ -22,7 +19,7 @@ export function CardHeader({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("border-b border-gray-100 px-6 py-4", className)}
+      className={cn("border-b border-line px-6 py-4", className)}
       {...props}
     />
   );
@@ -34,7 +31,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-sm font-semibold text-gray-900", className)}
+      className={cn("text-sm font-semibold text-content", className)}
       {...props}
     />
   );

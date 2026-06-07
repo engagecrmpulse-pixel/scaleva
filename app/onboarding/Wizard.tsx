@@ -72,22 +72,32 @@ export function Wizard() {
                   <div
                     className={cn(
                       "h-px flex-1 transition-colors duration-300",
-                      done ? "bg-indigo-600" : "bg-gray-200"
+                      done ? "bg-accent" : "bg-line"
                     )}
                   />
                 )}
                 <div
                   className={cn(
-                    "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
-                    done && "bg-indigo-600 text-white",
-                    current && "bg-indigo-600 text-white ring-4 ring-indigo-100",
-                    !done && !current && "bg-gray-100 text-gray-400"
+                    "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-btn text-xs font-semibold transition-all duration-300",
+                    done && "bg-accent text-white",
+                    current && "bg-accent text-white ring-2 ring-accent/30 ring-offset-2 ring-offset-base",
+                    !done && !current && "bg-surface border border-line text-content-muted"
                   )}
                   aria-current={current ? "step" : undefined}
                 >
                   {done ? (
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    <svg
+                      className="h-3.5 w-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.5 12.75l6 6 9-13.5"
+                      />
                     </svg>
                   ) : (
                     n
@@ -103,8 +113,12 @@ export function Wizard() {
               key={label}
               className={cn(
                 "flex-1 text-xs font-medium transition-colors",
-                i === 0 ? "text-left" : i === TOTAL_STEPS - 1 ? "text-right" : "text-center",
-                i + 1 === step ? "text-indigo-600" : "text-gray-400"
+                i === 0
+                  ? "text-left"
+                  : i === TOTAL_STEPS - 1
+                  ? "text-right"
+                  : "text-center",
+                i + 1 === step ? "text-accent" : "text-content-muted"
               )}
             >
               {label}
@@ -114,7 +128,7 @@ export function Wizard() {
       </div>
 
       {/* Step card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-card border border-line bg-surface p-8">
         <div className="min-h-[22rem]">
           {step === 1 && <StepDataSource {...stepProps} />}
           {step === 2 && <StepConnect {...stepProps} />}
@@ -124,15 +138,25 @@ export function Wizard() {
         </div>
 
         {step < TOTAL_STEPS && (
-          <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+          <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
             <button
               type="button"
               onClick={back}
               disabled={step === 1}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 items-center gap-1.5 rounded-btn px-3 text-sm font-medium text-content-muted transition-colors hover:bg-base hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
+                />
               </svg>
               Back
             </button>
@@ -140,11 +164,21 @@ export function Wizard() {
               type="button"
               onClick={next}
               disabled={!canAdvance(step, state)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-indigo-600 px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               Continue
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                />
               </svg>
             </button>
           </div>

@@ -13,7 +13,7 @@ export function StepConnect({ state, update }: StepProps) {
 
   if (!source) {
     return (
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-content-muted">
         Go back and choose a data source first.
       </p>
     );
@@ -26,8 +26,10 @@ export function StepConnect({ state, update }: StepProps) {
   if (source.id === "csv") {
     return (
       <div>
-        <h2 className="text-xl font-bold text-gray-900">Upload a CSV</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+          Upload a CSV
+        </h2>
+        <p className="mt-1 text-sm text-content-muted">
           We&apos;ll preview the rows before anything is saved.
         </p>
         <div className="mt-6">
@@ -40,8 +42,10 @@ export function StepConnect({ state, update }: StepProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Add customers</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+        Add customers
+      </h2>
+      <p className="mt-1 text-sm text-content-muted">
         Enter your customers one at a time. Add as many as you like.
       </p>
       <div className="mt-6">
@@ -54,27 +58,25 @@ export function StepConnect({ state, update }: StepProps) {
   );
 }
 
-/* OAuth placeholder ------------------------------------------------- */
 function OAuthConnect({ state, update }: StepProps) {
   const source = DATA_SOURCES.find((s) => s.id === state.dataSource)!;
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900">Connect {source.name}</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+        Connect {source.name}
+      </h2>
+      <p className="mt-1 text-sm text-content-muted">
         Authorize Scaleva to import your customers from {source.name}.
       </p>
 
-      <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center">
-        <span className="text-4xl" aria-hidden>
-          {source.icon}
-        </span>
+      <div className="mt-6 flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-base px-6 py-12 text-center">
         {state.connected ? (
           <>
             <Badge tone="green" className="mt-4">
               Connected
             </Badge>
-            <p className="mt-3 max-w-sm text-sm text-gray-500">
+            <p className="mt-3 max-w-sm text-sm text-content-muted">
               {source.name} is connected. You can finish setup now and import
               customers from the dashboard.
             </p>
@@ -89,9 +91,8 @@ function OAuthConnect({ state, update }: StepProps) {
           </>
         ) : (
           <>
-            <p className="mt-3 max-w-sm text-sm text-gray-500">
-              This is a placeholder connection for onboarding. Real syncing for
-              {" "}
+            <p className="max-w-sm text-sm text-content-muted">
+              This is a placeholder connection for onboarding. Real syncing for{" "}
               {source.name} runs from the dashboard once you&apos;re set up.
             </p>
             <Button className="mt-4" onClick={() => update({ connected: true })}>

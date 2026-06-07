@@ -30,7 +30,6 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       return;
     }
 
-    // Store the rich onboarding config in the businesses.config jsonb column.
     const config: BusinessConfig = {
       autopilot: false,
       cadence: state.cadence,
@@ -58,7 +57,6 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       return;
     }
 
-    // Bulk-insert the imported customers, linked to the new business.
     if (state.customers.length > 0) {
       const rows = state.customers.map((c) => {
         const spend_history: SpendHistoryEntry[] =
@@ -99,12 +97,14 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold tracking-tight text-gray-900">Ready to launch</h2>
-      <p className="mt-1.5 text-sm text-gray-500">
+      <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
+        Ready to launch
+      </h2>
+      <p className="mt-1.5 text-sm text-content-muted">
         Review your setup, then go live.
       </p>
 
-      <dl className="mt-6 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-gray-50/50">
+      <dl className="mt-6 divide-y divide-line rounded-card border border-line bg-base">
         <SummaryRow label="Business name" value={state.businessName || "—"} />
         <SummaryRow label="Industry" value={state.industry} />
         <SummaryRow
@@ -118,9 +118,9 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
         />
       </dl>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-xs text-danger">{error}</p>}
 
-      <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+      <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
         <Button variant="ghost" onClick={onBack} disabled={loading}>
           Back
         </Button>
@@ -131,7 +131,7 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
                 className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
                 aria-hidden
               />
-              Launching…
+              Launching...
             </span>
           ) : (
             "Go live"
@@ -145,8 +145,8 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between px-4 py-3">
-      <dt className="text-sm text-gray-500">{label}</dt>
-      <dd className="text-sm font-medium text-gray-900">{value}</dd>
+      <dt className="text-sm text-content-muted">{label}</dt>
+      <dd className="text-sm font-medium text-content">{value}</dd>
     </div>
   );
 }
