@@ -2,11 +2,6 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/utils/database.types";
 
-/**
- * Refreshes the user's Supabase session on every request and guards
- * authenticated routes. Public routes (landing, auth pages) are allowed
- * through; everything else redirects unauthenticated users to /login.
- */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -31,19 +26,17 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Do not run code between createServerClient and getUser().
-  // A simple mistake could make it hard to debug issues with random logouts.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
-  // Routes that don't require authentication.
-  const publicRoutes = ["/", "/login", "/signup", "/auth"];
-  const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  );
+  const publicRoutes = ["/", "/login", "/signup", "/auth", "/pricing"];
+  const webhookRoutes = ["/api/webhooks/", "/api/cron/"];
+  const isPublicRoute =
+    publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`)) ||
+    webhookRoutes.some((r) => pathname.startsWith(r));
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -51,11 +44,39 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Signed-in users shouldn't sit on the auth pages.
   if (user && (pathname === "/login" || pathname === "/signup")) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // Subscription gate: /dashboard and /settings require an active subscription.
+  if (user && (pathname === "/dashboard" || pathname.startsWith("/settings"))) {
+    const { data: businesses } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("owner_id", user.id)
+      .limit(1);
+
+    const businessId = businesses?.[0]?.id;
+
+    if (businessId) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("status")
+        .eq("business_id", businessId)
+        .maybeSingle();
+
+      const hasActiveSub =
+        sub?.status === "active" ||
+        sub?.status === "trialing";
+
+      if (!hasActiveSub) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/pricing";
+        return NextResponse.redirect(url);
+      }
+    }
   }
 
   return supabaseResponse;

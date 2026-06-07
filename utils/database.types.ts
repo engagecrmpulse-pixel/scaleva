@@ -1,9 +1,3 @@
-/**
- * Hand-written types describing the Supabase schema. In a production setup
- * these would be generated with `supabase gen types typescript`, but they are
- * authored here so the app is fully typed out of the box.
- */
-
 export type Json =
   | string
   | number
@@ -22,14 +16,19 @@ export type MessageStatus =
 export type MessageDirection = "outbound" | "inbound";
 
 export interface BusinessConfig {
-  /** Whether AI outreach is currently enabled for this business. */
   autopilot?: boolean;
-  /** Quiet hours during which no messages should be sent. */
   quietHours?: { start: string; end: string };
   cadence?: string;
   goals?: string[];
   customInstructions?: string;
-  /** Free-form additional settings. */
+  autopilotSendDay?: string;
+  autopilotSendTime?: string;
+  autopilotTimezone?: string;
+  integrations?: Record<string, { connected: boolean; lastSync?: string }>;
+  oauthTokens?: Record<string, string>;
+  emailNotifyReply?: boolean;
+  emailNotifyFailed?: boolean;
+  emailNotifyDailySummary?: boolean;
   [key: string]: Json | undefined;
 }
 
@@ -78,6 +77,9 @@ export interface Database {
           last_purchase: string | null;
           spend_history: SpendHistoryEntry[];
           next_contact_date: string | null;
+          return_visit_count: number;
+          last_return_date: string | null;
+          status: string | null;
         };
         Insert: {
           id?: string;
@@ -88,6 +90,9 @@ export interface Database {
           last_purchase?: string | null;
           spend_history?: SpendHistoryEntry[];
           next_contact_date?: string | null;
+          return_visit_count?: number;
+          last_return_date?: string | null;
+          status?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
         Relationships: [];
@@ -132,6 +137,54 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["interactions"]["Insert"]>;
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          business_id: string;
+          type: string;
+          content: string;
+          read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          type: string;
+          content: string;
+          read?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Insert"]>;
+        Relationships: [];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          business_id: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          plan: string;
+          status: string;
+          current_period_end: string | null;
+          message_count_this_period: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          plan?: string;
+          status?: string;
+          current_period_end?: string | null;
+          message_count_this_period?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -139,8 +192,9 @@ export interface Database {
   };
 }
 
-// Convenience row aliases used throughout the app.
 export type Business = Database["public"]["Tables"]["businesses"]["Row"];
 export type Customer = Database["public"]["Tables"]["customers"]["Row"];
 export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type Interaction = Database["public"]["Tables"]["interactions"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];

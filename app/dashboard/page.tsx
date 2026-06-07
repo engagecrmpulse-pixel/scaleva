@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "./DashboardClient";
-import type { Customer, Message } from "@/utils/database.types";
+import type { Customer, Message, Notification, Subscription } from "@/utils/database.types";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -14,10 +14,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Pick the most recent business. We intentionally avoid .maybeSingle() here:
-  // it throws when more than one row matches, which (if an account ever ends up
-  // with multiple businesses) would make this redirect to /onboarding and cause
-  // a /dashboard <-> /onboarding redirect loop.
   const { data: businesses } = await supabase
     .from("businesses")
     .select("*")
@@ -31,7 +27,12 @@ export default async function DashboardPage() {
     redirect("/onboarding");
   }
 
-  const [{ data: customers }, { data: messages }] = await Promise.all([
+  const [
+    { data: customers },
+    { data: messages },
+    { data: notifications },
+    { data: subscriptionData },
+  ] = await Promise.all([
     supabase
       .from("customers")
       .select("*")
@@ -43,10 +44,18 @@ export default async function DashboardPage() {
       .eq("business_id", business.id)
       .order("sent_at", { ascending: false })
       .limit(50),
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("business_id", business.id)
+      .order("created_at", { ascending: false })
+      .limit(15),
+    supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("business_id", business.id)
+      .maybeSingle(),
   ]);
-
-  const customerList: Customer[] = customers ?? [];
-  const messageList: Message[] = messages ?? [];
 
   return (
     <DashboardClient
@@ -57,8 +66,10 @@ export default async function DashboardPage() {
       userEmail={user.email}
       initialAutopilot={business.config?.autopilot ?? false}
       config={business.config ?? {}}
-      initialCustomers={customerList}
-      initialMessages={messageList}
+      initialCustomers={(customers ?? []) as Customer[]}
+      initialMessages={(messages ?? []) as Message[]}
+      initialNotifications={(notifications ?? []) as Notification[]}
+      subscription={(subscriptionData ?? null) as Subscription | null}
     />
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/Button";
 import { Badge } from "@/components/Badge";
 import { CsvDropzone } from "@/components/import/CsvDropzone";
 import { ManualEntryForm } from "@/components/import/ManualEntryForm";
@@ -60,6 +59,7 @@ export function StepConnect({ state, update }: StepProps) {
 
 function OAuthConnect({ state, update }: StepProps) {
   const source = DATA_SOURCES.find((s) => s.id === state.dataSource)!;
+  const oauthUrl = `/api/oauth/${source.id}`;
 
   return (
     <div>
@@ -77,29 +77,49 @@ function OAuthConnect({ state, update }: StepProps) {
               Connected
             </Badge>
             <p className="mt-3 max-w-sm text-sm text-content-muted">
-              {source.name} is connected. You can finish setup now and import
-              customers from the dashboard.
+              {source.name} is connected. Scaleva will sync your customers daily
+              and update records automatically.
             </p>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-4"
+            <button
+              type="button"
+              className="mt-4 inline-flex h-8 items-center rounded-btn border border-line px-3 text-xs font-medium text-content-muted hover:text-content transition-colors"
               onClick={() => update({ connected: false })}
             >
               Disconnect
-            </Button>
+            </button>
           </>
         ) : (
           <>
-            <p className="max-w-sm text-sm text-content-muted">
-              This is a placeholder connection for onboarding. Real syncing for{" "}
-              {source.name} runs from the dashboard once you&apos;re set up.
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card border border-line bg-surface text-2xl">
+              {source.icon}
+            </div>
+            <p className="max-w-xs text-sm text-content-muted">
+              Click below to authorize Scaleva to read your {source.name}{" "}
+              customers, purchase history, and spend data.
             </p>
-            <Button className="mt-4" onClick={() => update({ connected: true })}>
-              Connect {source.name}
-            </Button>
+            <div className="mt-5 flex flex-col items-center gap-2">
+              <a
+                href={oauthUrl}
+                className="inline-flex h-9 items-center gap-2 rounded-btn bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
+              >
+                Connect {source.name}
+              </a>
+              <button
+                type="button"
+                className="text-xs text-content-muted hover:text-content"
+                onClick={() => update({ connected: true })}
+              >
+                Skip for now (connect from dashboard later)
+              </button>
+            </div>
           </>
         )}
+      </div>
+
+      <div className="mt-4 rounded-card border border-line bg-base px-4 py-3">
+        <p className="text-xs text-content-muted">
+          <strong className="text-content">What we pull:</strong> customer names, phone numbers, emails, last purchase date, total spend, and full purchase history. Tokens are stored encrypted.
+        </p>
       </div>
     </div>
   );

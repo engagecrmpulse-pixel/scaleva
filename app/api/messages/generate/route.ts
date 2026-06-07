@@ -1,28 +1,81 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generateOutreachMessage, type OutreachParams } from "@/lib/claude";
+import { anthropic, CLAUDE_MODEL, generateOutreachMessage, type OutreachParams } from "@/lib/claude";
 import { formatCurrency, totalSpend } from "@/utils/helpers";
+import type { SpendHistoryEntry } from "@/utils/database.types";
 
-/**
- * POST /api/messages/generate
- *
- * Two modes (auth required for both):
- *
- * 1. DB mode — Body: { customerId: string }
- *    Looks the customer + business up in the database (ownership enforced via
- *    RLS) and generates a personalized outreach message.
- *
- * 2. Preview mode — Body: { preview: OutreachParams }
- *    Generates a message directly from the supplied params without touching
- *    the database. Used by the onboarding wizard's "Preview AI Message" step,
- *    where the business and customers only exist in client state and have not
- *    been persisted yet.
- *
- * Either way the response is { message: string } or an { error, detail }.
- */
 interface GenerateRequestBody {
   customerId?: string;
   preview?: Partial<OutreachParams>;
+}
+
+function daysSince(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function avgSpend(history: SpendHistoryEntry[]): number {
+  if (!history?.length) return 0;
+  return totalSpend(history) / history.length;
+}
+
+function buildSystemPrompt(
+  industry: string,
+  voice: string,
+  goals: string,
+  customInstructions: string | undefined,
+  customerFirstName: string,
+  daysSinceLastVisit: number | null,
+  lastPurchase: string | null,
+  avgSpendAmount: number,
+  totalSpendAmount: number
+): string {
+  const goalList = goals.toLowerCase();
+  const hasLoyalty = goalList.includes("loyalty");
+  const firstName = customerFirstName.split(" ")[0];
+  const visitNote = daysSinceLastVisit !== null
+    ? `It has been ${daysSinceLastVisit} days since their last visit.`
+    : "";
+
+  let industryGuidance = "";
+  const ind = industry.toLowerCase();
+
+  if (ind === "restaurant") {
+    industryGuidance = `This is a restaurant. ${visitNote} Encourage ${firstName} to come back${hasLoyalty ? " and mention loyalty rewards" : ""}. Reference their last visit warmly.`;
+  } else if (ind === "construction") {
+    industryGuidance = `This is a construction business. Reference their last project${lastPurchase ? ` (around ${lastPurchase})` : ""}. Suggest seasonal follow-up or maintenance check.`;
+  } else if (ind === "salon") {
+    industryGuidance = `This is a salon. ${visitNote} Suggest booking their next appointment${hasLoyalty ? " and mention loyalty rewards" : ""}. Reference their last service.`;
+  } else if (ind === "retail") {
+    industryGuidance = `This is a retail business. Reference their last purchase and suggest related products or a return visit.`;
+  } else if (ind === "fitness") {
+    industryGuidance = `This is a fitness business. ${visitNote} Motivate ${firstName} to re-engage and get back on track.`;
+  } else if (ind === "healthcare") {
+    industryGuidance = `This is a healthcare provider. Use a professional tone. Reference their last interaction and suggest a follow-up appointment.`;
+  } else if (ind === "legal") {
+    industryGuidance = `This is a legal practice. Use a professional tone. Reference their last interaction and suggest a follow-up.`;
+  } else if (ind === "real estate") {
+    industryGuidance = `This is a real estate business. Use a professional tone. Reference their last interaction and suggest a check-in.`;
+  } else {
+    industryGuidance = `Personalize this re-engagement message based on their purchase history. ${visitNote}`;
+  }
+
+  const spendContext = totalSpendAmount > 0
+    ? `Customer lifetime spend: ${formatCurrency(totalSpendAmount)}. Average transaction: ${formatCurrency(avgSpendAmount)}.`
+    : "";
+
+  const customNote = customInstructions
+    ? `\n\nAdditional business instructions: ${customInstructions}`
+    : "";
+
+  return (
+    `You are an expert SMS copywriter. Write ONE personalized SMS message under 160 characters total. ` +
+    `Voice/tone: ${voice}. Always address the customer by first name only (${firstName}). ` +
+    `Never sound like a template or mass text. No markdown, no placeholders. Return only the message body.\n\n` +
+    `${industryGuidance} ${spendContext}${customNote}`
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -43,10 +96,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // ---- Mode 2: inline preview (no DB lookup) ----------------------------
+  // ---- Preview mode -------------------------------------------------------
   if (body.preview) {
-    const { customerName, businessName, industry, voice, goal, context } =
-      body.preview;
+    const { customerName, businessName, industry, voice, goal, context } = body.preview;
 
     if (!customerName || !businessName) {
       return NextResponse.json(
@@ -74,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ---- Mode 1: existing DB-backed path ----------------------------------
+  // ---- DB mode ------------------------------------------------------------
   if (!body.customerId) {
     return NextResponse.json(
       { error: "customerId or preview is required" },
@@ -102,17 +154,63 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Business not found" }, { status: 404 });
   }
 
+  const history: SpendHistoryEntry[] = customer.spend_history ?? [];
+  const totalSpendAmount = totalSpend(history);
+  const avgSpendAmount = avgSpend(history);
+  const daysSinceLastVisit = daysSince(customer.last_purchase);
+  const firstName = customer.name.split(" ")[0];
+  const customInstructions = business.config?.customInstructions;
+  const goals = business.goals ?? "";
+
+  const systemPrompt = buildSystemPrompt(
+    business.industry ?? "small business",
+    business.voice ?? "friendly",
+    goals,
+    customInstructions,
+    customer.name,
+    daysSinceLastVisit,
+    customer.last_purchase,
+    avgSpendAmount,
+    totalSpendAmount
+  );
+
+  const userContent = [
+    `Business: ${business.name}`,
+    `Customer first name: ${firstName}`,
+    `Goals for this message: ${goals || "re-engage the customer"}`,
+    daysSinceLastVisit !== null
+      ? `Days since last visit: ${daysSinceLastVisit}`
+      : null,
+    customer.last_purchase ? `Last purchase date: ${customer.last_purchase}` : null,
+    totalSpendAmount > 0
+      ? `Total lifetime spend: ${formatCurrency(totalSpendAmount)}`
+      : null,
+    customer.next_contact_date
+      ? `Next contact date: ${customer.next_contact_date}`
+      : null,
+    "",
+    "Write the SMS message now. Under 160 characters. First name only. Not a template.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   try {
-    const message = await generateOutreachMessage({
-      customerName: customer.name,
-      businessName: business.name,
-      industry: business.industry ?? "small business",
-      voice: business.voice ?? "friendly",
-      goal: business.goals ?? "re-engage the customer",
-      context: `Lifetime spend: ${formatCurrency(
-        totalSpend(customer.spend_history)
-      )}. Last purchase: ${customer.last_purchase ?? "unknown"}.`,
+    const response = await anthropic.messages.create({
+      model: CLAUDE_MODEL,
+      max_tokens: 200,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userContent }],
     });
+
+    const block = response.content[0];
+    const message = block?.type === "text" ? block.text.trim() : "";
+
+    if (!message) {
+      return NextResponse.json(
+        { error: "Empty response from AI" },
+        { status: 502 }
+      );
+    }
 
     return NextResponse.json({ message });
   } catch (error) {

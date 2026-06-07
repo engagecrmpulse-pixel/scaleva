@@ -9,7 +9,7 @@ export const anthropic = new Anthropic({
 });
 
 /** Default model used for generating outreach copy. */
-export const CLAUDE_MODEL = "claude-sonnet-4-6";
+export const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 
 export interface OutreachParams {
   /** The customer's first name (or full name). */
@@ -41,9 +41,9 @@ export async function generateOutreachMessage(
     max_tokens: 300,
     system:
       "You are an expert SMS copywriter for small businesses. Write a single, " +
-      "concise, personalized text message under 320 characters. Do not use " +
-      "markdown, emojis unless on-brand, or placeholders like [Name]. Return " +
-      "only the message body with no preamble.",
+      "concise, personalized text message under 160 characters. Do not use " +
+      "markdown, emojis unless on-brand, or placeholders like [Name]. Never " +
+      "sound like a template or mass text. Return only the message body.",
     messages: [
       {
         role: "user",
