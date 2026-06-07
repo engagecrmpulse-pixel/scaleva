@@ -48,6 +48,7 @@ export default function IntegrationSection() {
               fontWeight: 700,
               letterSpacing: "-0.02em",
               color: "#fff",
+              lineHeight: 1.15,
             }}
           >
             Works with the tools you already use.
@@ -92,7 +93,7 @@ export default function IntegrationSection() {
               <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>
                 {int.name}
               </div>
-              <div style={{ fontSize: 12, color: "#555", marginTop: 3 }}>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 3 }}>
                 {int.desc}
               </div>
               <div
@@ -114,10 +115,10 @@ export default function IntegrationSection() {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           viewport={{ once: true }}
-          style={{ fontSize: 14, color: "#444" }}
+          style={{ fontSize: 14, color: "#666" }}
         >
           Or upload any{" "}
-          <span style={{ color: "#888", fontWeight: 500 }}>CSV file</span>.
+          <span style={{ color: "#aaa", fontWeight: 500 }}>CSV file</span>.
           2 minutes to import.
         </motion.p>
       </div>

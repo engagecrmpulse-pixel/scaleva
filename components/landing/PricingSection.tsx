@@ -312,9 +312,11 @@ export default function PricingSection() {
                   textDecoration: "none",
                   background: plan.highlight ? "#2563eb" : "#111",
                   color: "#fff",
-                  transition: "opacity 0.15s",
+                  transition: "opacity 0.15s, filter 0.15s",
                   fontFamily: INTER,
                 }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.filter = "brightness(1.15)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.filter = ""; }}
               >
                 Start with {plan.name}
               </Link>

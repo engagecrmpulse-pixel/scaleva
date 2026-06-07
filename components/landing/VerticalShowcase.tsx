@@ -173,7 +173,7 @@ function PhoneMockup({ sms, bizName }: { sms: string; bizName: string }) {
             alignItems: "center",
           }}
         >
-          <span style={{ fontSize: 9, color: "#444" }}>iMessage</span>
+          <span style={{ fontSize: 9, color: "#666" }}>iMessage</span>
         </div>
       </div>
     </div>
@@ -227,7 +227,7 @@ export default function VerticalShowcase() {
             <br />
             One thousand different messages.
           </h2>
-          <p style={{ marginTop: 14, fontSize: 16, color: "#555" }}>
+          <p style={{ marginTop: 14, fontSize: 16, color: "#888" }}>
             No templates. Every message written from scratch.
           </p>
         </motion.div>
@@ -305,7 +305,7 @@ export default function VerticalShowcase() {
                     fontWeight: 600,
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
-                    color: "#555",
+                    color: "#888",
                     marginBottom: 16,
                   }}
                 >
@@ -343,7 +343,7 @@ export default function VerticalShowcase() {
                     <div style={{ fontWeight: 600, fontSize: 14, color: "#fff" }}>
                       {tab.customerName}
                     </div>
-                    <div style={{ fontSize: 12, color: "#555" }}>{tab.label} customer</div>
+                    <div style={{ fontSize: 12, color: "#888" }}>{tab.label} customer</div>
                   </div>
                 </div>
                 {/* Rows */}
@@ -357,7 +357,7 @@ export default function VerticalShowcase() {
                       borderBottom: "1px solid #1a1a1a",
                     }}
                   >
-                    <span style={{ fontSize: 13, color: "#555" }}>{row.label}</span>
+                    <span style={{ fontSize: 13, color: "#888" }}>{row.label}</span>
                     <span
                       style={{
                         fontSize: 13,
@@ -386,7 +386,7 @@ export default function VerticalShowcase() {
               }}
             >
               <PhoneMockup sms={tab.sms} bizName={tab.bizName} />
-              <p style={{ fontSize: 13, color: "#444", fontStyle: "italic" }}>
+              <p style={{ fontSize: 13, color: "#666", fontStyle: "italic" }}>
                 Written for {tab.customerName} specifically.
               </p>
             </div>

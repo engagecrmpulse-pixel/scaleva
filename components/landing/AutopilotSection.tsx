@@ -78,7 +78,7 @@ export default function AutopilotSection() {
                 fontWeight: 600,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "#555",
+                color: "#888",
                 marginBottom: 20,
               }}
             >
@@ -100,7 +100,7 @@ export default function AutopilotSection() {
                   borderBottom: "1px solid #1a1a1a",
                 }}
               >
-                <span style={{ fontSize: 14, color: "#555" }}>{label}</span>
+                <span style={{ fontSize: 14, color: "#888" }}>{label}</span>
                 <span
                   style={{
                     fontSize: 14,
@@ -226,7 +226,7 @@ export default function AutopilotSection() {
               style={{
                 marginTop: 16,
                 fontSize: 15,
-                color: "#555",
+                color: "#888",
                 lineHeight: 1.6,
                 maxWidth: 380,
               }}

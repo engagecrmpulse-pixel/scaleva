@@ -75,43 +75,19 @@ export default function LandingPage() {
             style={{ display: "flex", gap: 32, alignItems: "center" }}
           >
             {[["#how-it-works","How it works"],["#pricing","Pricing"]].map(([href, label]) => (
-              <a
-                key={label}
-                href={href}
-                style={{
-                  fontSize: 15,
-                  color: "#888",
-                  textDecoration: "none",
-                  fontFamily: INTER,
-                  transition: "color 0.15s",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#fff")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#888")}
-              >
+              <a key={label} href={href} className="landing-nav-link" style={{ fontFamily: INTER }}>
                 {label}
               </a>
             ))}
           </nav>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Link href="/login" style={{ fontSize: 14, color: "#888", textDecoration: "none", fontFamily: INTER }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <Link href="/login" className="landing-nav-link" style={{ fontSize: 14, fontFamily: INTER }}>
               Log in
             </Link>
             <Link
               href="/signup"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 36,
-                padding: "0 18px",
-                background: "#fff",
-                color: "#0c0c0c",
-                fontFamily: INTER,
-                fontSize: 14,
-                fontWeight: 600,
-                borderRadius: 6,
-                textDecoration: "none",
-              }}
+              className="btn-primary-land"
+              style={{ height: 36, padding: "0 18px", fontSize: 14, fontFamily: INTER }}
             >
               Get started
             </Link>

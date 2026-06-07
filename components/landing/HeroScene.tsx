@@ -65,29 +65,33 @@ export default function HeroScene() {
     canvasRef.current.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0c0c);
-    scene.fog = new THREE.FogExp2(0x0c0c0c, 0.035);
+    scene.background = new THREE.Color(0x080810);
+    scene.fog = new THREE.FogExp2(0x080810, 0.016);
 
     const camera = new THREE.PerspectiveCamera(60, W / H, 0.1, 200);
     camera.position.set(0, 8, 12);
     camera.lookAt(0, 0, 0);
 
-    // Lights
-    const ambient = new THREE.AmbientLight(0xffffff, 0.1);
+    // Lights — much brighter so buildings are readable
+    const ambient = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambient);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    const dirLight = new THREE.DirectionalLight(0xb0c8ff, 1.4);
     dirLight.position.set(-5, 10, 5);
     scene.add(dirLight);
 
-    const heroPoint = new THREE.PointLight(0x2563eb, 6, 20);
+    const fillLight = new THREE.DirectionalLight(0x8090c0, 0.6);
+    fillLight.position.set(5, 4, -5);
+    scene.add(fillLight);
+
+    const heroPoint = new THREE.PointLight(0x2563eb, 10, 22);
     heroPoint.position.set(0, 9, 0);
     scene.add(heroPoint);
 
     // Ground plane
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(100, 100),
-      new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 1 })
+      new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.95 })
     );
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.01;
@@ -95,21 +99,26 @@ export default function HeroScene() {
 
     // Hero (center) building
     const heroMat = new THREE.MeshStandardMaterial({
-      color: 0x0d1b3e,
+      color: 0x1a2a5e,
       emissive: new THREE.Color(0x2563eb),
-      emissiveIntensity: 0.35,
-      roughness: 0.5,
-      metalness: 0.1,
+      emissiveIntensity: 0.7,
+      roughness: 0.4,
+      metalness: 0.2,
     });
     const heroMesh = new THREE.Mesh(new THREE.BoxGeometry(1.0, 6, 1.0), heroMat);
     heroMesh.position.set(0, 3, 0);
     scene.add(heroMesh);
 
-    // Surrounding buildings
+    // Surrounding buildings — varied brightness for visual depth
     const bldgMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1a,
-      roughness: 0.9,
-      metalness: 0.05,
+      color: 0x2a2a38,
+      roughness: 0.8,
+      metalness: 0.1,
+    });
+    const bldgMat2 = new THREE.MeshStandardMaterial({
+      color: 0x1e1e2c,
+      roughness: 0.85,
+      metalness: 0.08,
     });
 
     // Deterministic grid of buildings
@@ -128,9 +137,10 @@ export default function HeroScene() {
     };
 
     gridPositions.forEach(([bx, bz], i) => {
-      const h = 0.4 + seedH(i) * 3.0;
-      const w = 0.4 + seedH(i + 100) * 0.7;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), bldgMat);
+      const h = 0.5 + seedH(i) * 3.5;
+      const w = 0.45 + seedH(i + 100) * 0.65;
+      const mat = i % 3 === 0 ? bldgMat2 : bldgMat;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), mat);
       mesh.position.set(
         bx + (seedH(i + 200) - 0.5) * 0.6,
         h / 2,
@@ -320,10 +330,10 @@ export default function HeroScene() {
             transition={{ duration: 0.6, delay: 1.0 }}
             style={{
               fontSize: "clamp(16px,2vw,19px)",
-              color: "#666",
+              color: "#aaa",
               maxWidth: 560,
-              lineHeight: 1.7,
-              marginBottom: 36,
+              lineHeight: 1.75,
+              marginBottom: 40,
             }}
           >
             Scaleva reads your customer data and writes a personal SMS for every
@@ -338,46 +348,10 @@ export default function HeroScene() {
             transition={{ duration: 0.5, delay: 1.35 }}
             style={{ display: "flex", gap: 14, flexWrap: "wrap", justifyContent: "center" }}
           >
-            <Link
-              href="/signup"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 48,
-                padding: "0 28px",
-                background: "#fff",
-                color: "#0c0c0c",
-                fontFamily: INTER,
-                fontSize: 15,
-                fontWeight: 600,
-                borderRadius: 6,
-                textDecoration: "none",
-                transition: "opacity 0.15s",
-                willChange: "transform",
-              }}
-            >
+            <Link href="/signup" className="btn-primary-land" style={{ fontFamily: INTER }}>
               Get started free
             </Link>
-            <a
-              href="#how-it-works"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: 48,
-                padding: "0 28px",
-                background: "transparent",
-                color: "#fff",
-                fontFamily: INTER,
-                fontSize: 15,
-                fontWeight: 500,
-                borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.2)",
-                textDecoration: "none",
-                transition: "border-color 0.15s",
-              }}
-            >
+            <a href="#how-it-works" className="btn-ghost-land" style={{ fontFamily: INTER }}>
               See how it works
             </a>
           </motion.div>
@@ -388,29 +362,28 @@ export default function HeroScene() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             transition={{ delay: 2, duration: 0.6 }}
             style={{
               position: "absolute",
-              bottom: 28,
+              bottom: 32,
               left: "50%",
               transform: "translateX(-50%)",
               zIndex: 10,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 6,
+              gap: 8,
               pointerEvents: "none",
             }}
           >
-            <span style={{ fontSize: 11, color: "#444", letterSpacing: "0.06em" }}>
-              SCROLL TO EXPLORE
+            <span style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              Scroll to explore
             </span>
             <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+              animate={{ y: [0, 5, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth={1.5}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
               </svg>
             </motion.div>

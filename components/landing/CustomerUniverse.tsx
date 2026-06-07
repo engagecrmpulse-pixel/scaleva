@@ -124,8 +124,8 @@ export default function CustomerUniverse() {
     canvasRef.current.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0c0c);
-    scene.fog = new THREE.FogExp2(0x0c0c0c, 0.08);
+    scene.background = new THREE.Color(0x080810);
+    scene.fog = new THREE.FogExp2(0x080810, 0.028);
 
     const camera = new THREE.PerspectiveCamera(65, W / H, 0.1, 50);
     camera.position.set(0, 0, 3);
@@ -168,14 +168,10 @@ export default function CustomerUniverse() {
       const targetZ = lerp(3, -3, scrollRef.current);
       camera.position.z += (targetZ - camera.position.z) * 0.06;
 
-      // Card float
+      // Card float — no opacity manipulation, fog handles depth
       meshes.forEach((mesh, i) => {
         const card = CARDS[i];
-        mesh.position.y = baseY[i] + Math.sin(elapsed * card.speed + card.phase) * 0.15;
-        // Fade out cards that are behind the camera
-        const dist = mesh.position.z - camera.position.z;
-        const mat = mesh.material as THREE.MeshBasicMaterial;
-        mat.opacity = Math.max(0, Math.min(1, (dist + 1.5) / 2));
+        mesh.position.y = baseY[i] + Math.sin(elapsed * card.speed + card.phase) * 0.18;
       });
 
       camera.lookAt(0, 0, camera.position.z - 4);
@@ -255,8 +251,8 @@ export default function CustomerUniverse() {
           </p>
           <p
             style={{
-              fontSize: "clamp(14px,2vw,18px)",
-              color: "#555",
+              fontSize: "clamp(15px,2vw,19px)",
+              color: "#999",
               lineHeight: 1.6,
             }}
           >

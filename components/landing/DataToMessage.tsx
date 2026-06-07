@@ -166,7 +166,7 @@ export default function DataToMessage() {
                 <div style={{ fontWeight: 700, fontSize: 15, color: "#fff" }}>
                   Maria Chen
                 </div>
-                <div style={{ fontSize: 12, color: "#555" }}>
+                <div style={{ fontSize: 12, color: "#888" }}>
                   Restaurant customer · 3 years
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function DataToMessage() {
                     fontFamily: MONO,
                   }}
                 >
-                  <span style={{ fontSize: 13, color: "#555" }}>{row.label}</span>
+                  <span style={{ fontSize: 13, color: "#888" }}>{row.label}</span>
                   <span
                     style={{
                       fontSize: 13,
@@ -302,7 +302,7 @@ export default function DataToMessage() {
                   <div style={{ fontSize: 11, fontWeight: 600, color: "#fff" }}>
                     Rosario&apos;s
                   </div>
-                  <div style={{ fontSize: 9, color: "#444" }}>Text Message</div>
+                  <div style={{ fontSize: 9, color: "#666" }}>Text Message</div>
                 </div>
               </div>
               {/* Messages */}
@@ -399,7 +399,7 @@ export default function DataToMessage() {
                     alignItems: "center",
                   }}
                 >
-                  <span style={{ fontSize: 10, color: "#444" }}>iMessage</span>
+                  <span style={{ fontSize: 10, color: "#666" }}>iMessage</span>
                 </div>
                 <div
                   style={{

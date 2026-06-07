@@ -213,6 +213,53 @@ body {
   box-shadow: 0 0 24px rgba(99,102,241,0.25);
 }
 
+/* ─── Landing nav links ──────────────────────────── */
+.landing-nav-link {
+  font-size: 15px;
+  color: #777;
+  text-decoration: none;
+  transition: color 0.18s;
+}
+.landing-nav-link:hover { color: #fff; }
+
+/* ─── Landing buttons ────────────────────────────── */
+.btn-primary-land {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 28px;
+  background: #fff;
+  color: #0c0c0c;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+}
+.btn-primary-land:hover { background: #e8e8e8; }
+.btn-primary-land:active { transform: scale(0.98); }
+
+.btn-ghost-land {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 28px;
+  background: transparent;
+  color: #ccc;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+.btn-ghost-land:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
+
 /* ─── Old landing-page compat (aos) ─────────────── */
 
 .aos {

@@ -56,27 +56,13 @@ export default function FinalCTA() {
         <div style={{ marginTop: 44 }}>
           <Link
             href="/signup"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: 52,
-              padding: "0 36px",
-              background: "#fff",
-              color: "#0c0c0c",
-              fontFamily: INTER,
-              fontSize: 16,
-              fontWeight: 600,
-              borderRadius: 6,
-              textDecoration: "none",
-              transition: "opacity 0.15s",
-              willChange: "transform",
-            }}
+            className="btn-primary-land"
+            style={{ height: 52, padding: "0 40px", fontSize: 16, fontFamily: INTER }}
           >
             Get started free
           </Link>
         </div>
-        <p style={{ marginTop: 16, fontSize: 13, color: "#444" }}>
+        <p style={{ marginTop: 16, fontSize: 13, color: "#666" }}>
           No credit card required · Cancel anytime
         </p>
       </motion.div>
