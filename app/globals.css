@@ -3,21 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --color-base: #0f1117;
-  --color-surface: #1a1d24;
-  --color-border: #2a2d35;
+  --color-base: #080b14;
+  --color-surface: #0f1420;
+  --color-surface-light: #ffffff;
+  --color-border: #1e2433;
   --color-text: #e8e9ec;
   --color-muted: #6b7180;
   --color-accent: #3b82f6;
   --color-danger: #ef4444;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
-  background-color: #0f1117;
-  color: #e8e9ec;
+  background-color: var(--color-base);
+  color: var(--color-text);
 }
 
 body {
@@ -31,22 +36,157 @@ body {
   box-sizing: border-box;
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1e2433; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2a2d45; }
+
+::selection { background: rgba(59,130,246,0.25); color: #e8e9ec; }
+
+/* ─── Keyframes ─────────────────────────────────── */
+
+@keyframes blob1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(80px,-60px) scale(1.12); }
+  66%      { transform: translate(-40px,50px) scale(0.9); }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes blob2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(-70px,55px) scale(0.88); }
+  66%      { transform: translate(65px,-35px) scale(1.1); }
 }
-::-webkit-scrollbar-thumb {
-  background: #2a2d35;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3a3d45;
+@keyframes blob3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(55px,65px) scale(1.06); }
+  66%      { transform: translate(-80px,-25px) scale(0.94); }
 }
 
-::selection {
-  background: rgba(59, 130, 246, 0.25);
+@keyframes phoneFloat {
+  0%,100% { transform: perspective(800px) rotateY(-8deg) rotateX(3deg) translateY(0px); }
+  50%      { transform: perspective(800px) rotateY(-8deg) rotateX(3deg) translateY(-14px); }
+}
+
+@keyframes bounceArrow {
+  0%,100% { transform: translateY(0) translateX(-50%); }
+  50%      { transform: translateY(8px) translateX(-50%); }
+}
+
+@keyframes navSlideIn {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes wordReveal {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scrollLeft {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes gradientShift {
+  0%,100% { background-position: 0% 50%; }
+  50%     { background-position: 100% 50%; }
+}
+
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 20px rgba(59,130,246,0.3), 0 0 60px rgba(59,130,246,0.1); }
+  50%     { box-shadow: 0 0 40px rgba(59,130,246,0.5), 0 0 80px rgba(59,130,246,0.2); }
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Scroll animation classes ───────────────────── */
+
+.aos {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.aos.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Gradient text ──────────────────────────────── */
+
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 4s ease infinite;
+}
+
+/* ─── Glow button ────────────────────────────────── */
+
+.btn-glow {
+  position: relative;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-glow:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 24px rgba(99,102,241,0.5), 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.btn-ghost {
+  position: relative;
+  border: 1px solid rgba(99,102,241,0.4);
   color: #e8e9ec;
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost:hover {
+  transform: scale(1.02);
+  border-color: rgba(99,102,241,0.8);
+  box-shadow: 0 0 20px rgba(99,102,241,0.2), inset 0 0 20px rgba(99,102,241,0.05);
+}
+
+/* ─── Card hover ─────────────────────────────────── */
+
+.card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,102,241,0.15);
+}
+
+/* ─── Infinite scroll track ──────────────────────── */
+
+.scroll-track {
+  display: flex;
+  width: max-content;
+  animation: scrollLeft 22s linear infinite;
+}
+.scroll-track:hover {
+  animation-play-state: paused;
+}
+
+/* ─── Grid lines overlay ─────────────────────────── */
+
+.grid-overlay {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
 }
