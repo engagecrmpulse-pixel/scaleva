@@ -26,6 +26,9 @@ export interface BusinessConfig {
   autopilot?: boolean;
   /** Quiet hours during which no messages should be sent. */
   quietHours?: { start: string; end: string };
+  cadence?: string;
+  goals?: string[];
+  customInstructions?: string;
   /** Free-form additional settings. */
   [key: string]: Json | undefined;
 }
@@ -42,22 +45,24 @@ export interface Database {
       businesses: {
         Row: {
           id: string;
+          owner_id: string;
           name: string;
           industry: string | null;
           voice: string | null;
           goals: string | null;
           data_source: string | null;
-          config: BusinessConfig;
+          config: BusinessConfig | null;
           created_at: string;
         };
         Insert: {
           id?: string;
+          owner_id: string;
           name: string;
           industry?: string | null;
           voice?: string | null;
           goals?: string | null;
           data_source?: string | null;
-          config?: BusinessConfig;
+          config?: BusinessConfig | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["businesses"]["Insert"]>;

@@ -58,7 +58,7 @@ export default async function DashboardPage() {
         industry={business.industry}
         voice={business.voice}
         initialAutopilot={business.config?.autopilot ?? false}
-        config={business.config}
+        config={business.config ?? {}}
         initialCustomers={customerList}
         initialMessages={messageList}
       />
