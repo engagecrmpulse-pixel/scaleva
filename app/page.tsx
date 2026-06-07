@@ -27,11 +27,11 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-[1200px] px-6 py-24 lg:py-32">
-        <div className="grid gap-16 lg:grid-cols-[60fr_40fr] lg:items-center">
+      <section className="mx-auto max-w-[1200px] px-6 py-16 lg:py-32">
+        <div className="grid gap-12 lg:grid-cols-[60fr_40fr] lg:items-center">
           {/* Left: copy */}
           <div>
-            <h1 className="font-heading text-4xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-5xl lg:text-[56px]">
+            <h1 className="font-heading text-3xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-4xl lg:text-[56px]">
               Your customers forget you exist.{" "}
               <span className="text-content-muted">Scaleva fixes that.</span>
             </h1>
@@ -40,7 +40,7 @@ export default function LandingPage() {
               purchase history and your brand voice, then sends it at the right
               time. No templates. No blasting.
             </p>
-            <div className="mt-8 flex items-center gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link
                 href="/signup"
                 className="inline-flex h-10 items-center rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
@@ -48,16 +48,16 @@ export default function LandingPage() {
                 Get started free
               </Link>
               <Link
-                href="/login"
+                href="/pricing"
                 className="text-sm text-content-muted transition-colors hover:text-content"
               >
-                Log in
+                See pricing →
               </Link>
             </div>
           </div>
 
-          {/* Right: terminal */}
-          <div className="overflow-hidden rounded-card border border-line bg-surface font-mono text-xs">
+          {/* Right: terminal — hidden on small screens */}
+          <div className="hidden overflow-hidden rounded-card border border-line bg-surface font-mono text-xs lg:block">
             <div className="flex items-center gap-1.5 border-b border-line px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full bg-line" />
               <span className="h-2.5 w-2.5 rounded-full bg-line" />
@@ -96,9 +96,9 @@ export default function LandingPage() {
 
       {/* Features */}
       <section className="border-t border-line">
-        <div className="mx-auto max-w-[1200px] px-6 py-24">
+        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:py-24">
           <div className="mb-12">
-            <h2 className="font-heading text-2xl font-semibold tracking-[-0.03em] text-content">
+            <h2 className="font-heading text-xl font-semibold tracking-[-0.03em] text-content sm:text-2xl">
               Built for businesses that rely on repeat customers
             </h2>
             <p className="mt-2 text-base text-content-muted">
@@ -109,7 +109,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:grid-rows-2">
             {/* Large card */}
-            <div className="rounded-card border border-line bg-surface p-8 lg:col-span-2 lg:row-span-2">
+            <div className="rounded-card border border-line bg-surface p-6 lg:col-span-2 lg:row-span-2 lg:p-8">
               <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-btn border border-line text-content-muted">
                 <svg
                   className="h-4 w-4"
@@ -125,7 +125,7 @@ export default function LandingPage() {
                   />
                 </svg>
               </div>
-              <h3 className="font-heading text-xl font-semibold tracking-[-0.02em] text-content">
+              <h3 className="font-heading text-lg font-semibold tracking-[-0.02em] text-content sm:text-xl">
                 Knows your customers
               </h3>
               <p className="mt-3 max-w-md text-base leading-relaxed text-content-muted">
@@ -210,13 +210,18 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1200px] items-center justify-between px-6 py-6">
-          <span className="font-heading text-sm font-semibold text-content">
-            Scaleva
-          </span>
-          <p className="text-xs text-content-muted">
-            &copy; {new Date().getFullYear()} Scaleva
-          </p>
+        <div className="mx-auto max-w-[1200px] px-6 py-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <span className="font-heading text-sm font-semibold text-content">
+              Scaleva
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-content-muted sm:justify-end">
+              <Link href="/pricing" className="hover:text-content transition-colors">Pricing</Link>
+              <Link href="/privacy" className="hover:text-content transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-content transition-colors">Terms of Service</Link>
+              <span>&copy; {new Date().getFullYear()} Scaleva</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -20,6 +20,12 @@ const PLAN_LIMITS: Record<string, number> = {
   growth: 6000,
   pro: 25000,
 };
+
+interface Toast {
+  id: string;
+  message: string;
+  variant: "success" | "error";
+}
 
 interface DashboardClientProps {
   businessId: string;
@@ -93,6 +99,8 @@ function Sidebar({
   onToggleAutopilot,
   sendDay,
   sendTime,
+  isOpen,
+  onClose,
 }: {
   businessName: string;
   userEmail?: string | null;
@@ -101,6 +109,8 @@ function Sidebar({
   onToggleAutopilot: () => void;
   sendDay: string;
   sendTime: string;
+  isOpen: boolean;
+  onClose: () => void;
 }) {
   const router = useRouter();
 
@@ -112,7 +122,16 @@ function Sidebar({
   }
 
   return (
-    <aside className="flex w-60 flex-shrink-0 flex-col border-r border-line bg-surface">
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
+      )}
+    <aside className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 md:relative md:translate-x-0 md:z-auto ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="flex h-14 items-center border-b border-line px-5">
         <span className="font-heading text-sm font-semibold tracking-tight text-content">
           Scaleva
@@ -192,6 +211,7 @@ function Sidebar({
         </button>
       </div>
     </aside>
+    </>
   );
 }
 
@@ -350,6 +370,9 @@ export function DashboardClient({
   const [rowState, setRowState] = useState<
     Record<string, { loading: boolean; error: string | null; returning?: boolean }>
   >({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>();
 
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<CustomerDraft>(emptyDraft());
@@ -359,6 +382,18 @@ export function DashboardClient({
 
   const sendDay = config.autopilotSendDay ?? "Monday";
   const sendTime = config.autopilotSendTime ?? "9 AM";
+
+  const addToast = useCallback((message: string, variant: "success" | "error") => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { id, message, variant }]);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }, []);
+
+  // Clean up timer on unmount
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const messagesSent = useMemo(
     () => messages.filter((m) => m.direction === "outbound").length,
@@ -439,11 +474,14 @@ export function DashboardClient({
 
       setMessages((prev) => [sendData.message as Message, ...prev]);
       setRowState((s) => ({ ...s, [customer.id]: { loading: false, error: null } }));
+      addToast("Message sent!", "success");
     } catch (e) {
+      const msg = e instanceof Error ? e.message : "Something went wrong";
       setRowState((s) => ({
         ...s,
-        [customer.id]: { loading: false, error: e instanceof Error ? e.message : "Something went wrong" },
+        [customer.id]: { loading: false, error: msg },
       }));
+      addToast(msg, "error");
     }
   }
 
@@ -512,6 +550,7 @@ export function DashboardClient({
 
     setCustomers((prev) => [...prev, data.customer!]);
     setAddOpen(false);
+    addToast(`${draft.name} added!`, "success");
   }
 
   const slideInputClass =
@@ -538,15 +577,28 @@ export function DashboardClient({
           onToggleAutopilot={toggleAutopilot}
           sendDay={sendDay}
           sendTime={sendTime}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Topbar */}
-          <div className="flex h-14 flex-shrink-0 items-center border-b border-line bg-surface px-6">
-            <div>
+          <div className="flex h-14 flex-shrink-0 items-center border-b border-line bg-surface px-4 md:px-6">
+            {/* Hamburger — mobile only */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen((o) => !o)}
+              className="mr-3 flex h-8 w-8 items-center justify-center rounded-btn text-content-muted hover:bg-base hover:text-content md:hidden"
+              aria-label="Toggle menu"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+            <div className="min-w-0">
               <span className="text-sm font-medium text-content">Dashboard</span>
-              <span className="mx-2 text-content-muted">&middot;</span>
-              <span className="text-sm text-content-muted">
+              <span className="mx-2 hidden text-content-muted sm:inline">&middot;</span>
+              <span className="hidden text-sm text-content-muted sm:inline">
                 {industry ?? "Business"} &middot; {voice ?? "Friendly"} voice
               </span>
             </div>
@@ -591,7 +643,7 @@ export function DashboardClient({
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl px-6 py-8">
               {/* Stats */}
-              <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
                 <StatCard label="Total customers" value={String(customers.length)} />
                 <StatCard label="Messages sent" value={String(messagesSent)} />
                 <StatCard label="Replies received" value={String(repliesReceived)} />
@@ -852,6 +904,40 @@ export function DashboardClient({
           </div>
         </div>
       )}
+
+      {/* Toast notifications */}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`flex items-center gap-2.5 rounded-card border px-4 py-3 text-sm shadow-xl backdrop-blur-sm transition-all ${
+              t.variant === "success"
+                ? "border-green-500/30 bg-green-500/10 text-green-400"
+                : "border-danger/30 bg-danger/10 text-danger"
+            }`}
+          >
+            {t.variant === "success" ? (
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            )}
+            {t.message}
+            <button
+              type="button"
+              onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+              className="ml-1 opacity-60 hover:opacity-100"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
     </>
   );
 }

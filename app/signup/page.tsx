@@ -9,21 +9,35 @@ export default function SignupPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldError, setFieldError] = useState<{ email?: string; password?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function validate(): boolean {
+    const errs: { email?: string; password?: string } = {};
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errs.email = "Enter a valid email address.";
+    }
+    if (password.length < 8) {
+      errs.password = "Password must be at least 8 characters.";
+    }
+    setFieldError(errs);
+    return Object.keys(errs).length === 0;
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     setMessage(null);
+    if (!validate()) return;
     setLoading(true);
 
     const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?type=signup` },
     });
 
     setLoading(false);
@@ -55,10 +69,7 @@ export default function SignupPage() {
     <div className="grid min-h-screen lg:grid-cols-[420px_1fr]">
       {/* Left panel */}
       <div className="hidden flex-col bg-base px-10 py-10 lg:flex border-r border-line">
-        <Link
-          href="/"
-          className="font-heading text-sm font-semibold tracking-tight text-content"
-        >
+        <Link href="/" className="font-heading text-sm font-semibold tracking-tight text-content">
           Scaleva
         </Link>
         <div className="mt-auto pb-16">
@@ -71,10 +82,7 @@ export default function SignupPage() {
       {/* Right panel */}
       <div className="flex items-center justify-center bg-surface px-6 py-16">
         <div className="w-full max-w-sm">
-          <Link
-            href="/"
-            className="font-heading text-sm font-semibold tracking-tight text-content lg:hidden"
-          >
+          <Link href="/" className="font-heading text-sm font-semibold tracking-tight text-content lg:hidden">
             Scaleva
           </Link>
 
@@ -85,12 +93,9 @@ export default function SignupPage() {
             Free to start. No credit card required.
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
             <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-xs font-medium text-content-muted"
-              >
+              <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-content-muted">
                 Email
               </label>
               <input
@@ -98,19 +103,16 @@ export default function SignupPage() {
                 type="email"
                 name="email"
                 autoComplete="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass(!!error)}
+                onChange={(e) => { setEmail(e.target.value); setFieldError((p) => ({ ...p, email: undefined })); }}
+                className={inputClass(!!fieldError.email)}
                 placeholder="you@company.com"
               />
+              {fieldError.email && <p className="mt-1 text-xs text-danger">{fieldError.email}</p>}
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-xs font-medium text-content-muted"
-              >
+              <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-content-muted">
                 Password
               </label>
               <input
@@ -118,13 +120,12 @@ export default function SignupPage() {
                 type="password"
                 name="password"
                 autoComplete="new-password"
-                minLength={6}
-                required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={inputClass(!!error)}
-                placeholder="Min. 6 characters"
+                onChange={(e) => { setPassword(e.target.value); setFieldError((p) => ({ ...p, password: undefined })); }}
+                className={inputClass(!!fieldError.password)}
+                placeholder="Min. 8 characters"
               />
+              {fieldError.password && <p className="mt-1 text-xs text-danger">{fieldError.password}</p>}
             </div>
 
             {error && <p className="text-xs text-danger">{error}</p>}
@@ -142,10 +143,7 @@ export default function SignupPage() {
             >
               {loading ? (
                 <>
-                  <span
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
-                    aria-hidden
-                  />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
                   Creating account...
                 </>
               ) : (
@@ -156,12 +154,16 @@ export default function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-content-muted">
             Already have an account?{" "}
-            <Link
-              href="/login"
-              className="text-content transition-colors hover:text-accent"
-            >
+            <Link href="/login" className="text-content transition-colors hover:text-accent">
               Log in
             </Link>
+          </p>
+
+          <p className="mt-4 text-center text-xs text-content-muted">
+            By signing up you agree to our{" "}
+            <Link href="/terms" className="hover:underline">Terms of Service</Link>
+            {" "}and{" "}
+            <Link href="/privacy" className="hover:underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>

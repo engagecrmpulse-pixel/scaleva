@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { anthropic, CLAUDE_MODEL, generateOutreachMessage, type OutreachParams } from "@/lib/claude";
 import { formatCurrency, totalSpend } from "@/utils/helpers";
+import { rateLimit } from "@/lib/rate-limit";
 import type { SpendHistoryEntry } from "@/utils/database.types";
 
 interface GenerateRequestBody {
@@ -131,6 +132,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "customerId or preview is required" },
       { status: 400 }
+    );
+  }
+
+  // Rate limit: 100 generates/min per user
+  const rl = rateLimit(`generate:${user.id}`, 100);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again shortly." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      }
     );
   }
 

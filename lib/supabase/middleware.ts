@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const publicRoutes = ["/", "/login", "/signup", "/auth", "/pricing"];
+  const publicRoutes = ["/", "/login", "/signup", "/auth", "/pricing", "/privacy", "/terms"];
   const webhookRoutes = ["/api/webhooks/", "/api/cron/"];
   const isPublicRoute =
     publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`)) ||

@@ -331,11 +331,13 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
                 <div key={provider} className="flex items-center justify-between rounded-btn border border-line px-4 py-3">
                   <div>
                     <span className="text-sm font-medium capitalize text-content">{provider}</span>
-                    {info.lastSync && (
-                      <p className="text-xs text-content-muted">
-                        Last synced {new Date(info.lastSync).toLocaleString()}
-                      </p>
-                    )}
+                    <p className="text-xs text-content-muted">
+                      {info.customersSynced !== undefined
+                        ? `${info.customersSynced} customers synced`
+                        : info.lastSync
+                        ? `Last synced ${new Date(info.lastSync).toLocaleString()}`
+                        : "Connected"}
+                    </p>
                   </div>
                   <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
                     Connected

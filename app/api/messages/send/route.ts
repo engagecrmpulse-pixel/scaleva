@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/twilio";
 import { isValidPhone, normalizePhone } from "@/utils/helpers";
+import { rateLimit } from "@/lib/rate-limit";
 import type { MessageStatus } from "@/utils/database.types";
 
 function toMessageStatus(twilioStatus: string): MessageStatus {
@@ -69,9 +70,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!customer.phone || !isValidPhone(customer.phone)) {
+  // Rate limit: 100 sends/min per business
+  const rl = rateLimit(`send:${customer.business_id}`, 100);
+  if (!rl.ok) {
     return NextResponse.json(
-      { error: "Customer has no valid phone number" },
+      { error: "Rate limit exceeded. Try again shortly." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rl.retryAfter) },
+      }
+    );
+  }
+
+  if (!customer.phone) {
+    return NextResponse.json(
+      { error: "This customer has no phone number. Add one in their profile before sending." },
+      { status: 400 }
+    );
+  }
+
+  if (!isValidPhone(customer.phone)) {
+    return NextResponse.json(
+      { error: `Invalid phone number: ${customer.phone}. Use E.164 format (e.g. +14155551234).` },
       { status: 400 }
     );
   }

@@ -50,104 +50,123 @@ export async function POST(request: NextRequest) {
 
   const supabase = getServiceClient();
 
-  // ── New subscription from checkout ────────────────────────────────────────
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const businessId = session.metadata?.businessId;
-    const plan = session.metadata?.plan ?? "starter";
-    const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.starter;
+  try {
+    // ── New subscription from checkout ────────────────────────────────────────
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const businessId = session.metadata?.businessId;
+      const plan = session.metadata?.plan ?? "starter";
+      const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.starter;
 
-    if (businessId && session.customer && session.subscription) {
-      const stripeCustomerId =
-        typeof session.customer === "string" ? session.customer : session.customer.id;
-      const stripeSubId =
-        typeof session.subscription === "string" ? session.subscription : session.subscription.id;
+      if (businessId && session.customer && session.subscription) {
+        const stripeCustomerId =
+          typeof session.customer === "string" ? session.customer : session.customer.id;
+        const stripeSubId =
+          typeof session.subscription === "string" ? session.subscription : session.subscription.id;
 
-      const sub = await stripe.subscriptions.retrieve(stripeSubId);
-      const periodEnd = getPeriodEnd(sub);
+        const sub = await stripe.subscriptions.retrieve(stripeSubId);
+        const periodEnd = getPeriodEnd(sub);
 
-      const existing = await supabase
-        .from("subscriptions")
-        .select("id")
-        .eq("business_id", businessId)
-        .maybeSingle();
-
-      const subPayload = {
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: stripeSubId,
-        plan,
-        status: "active",
-        current_period_end: periodEnd,
-        message_count_this_period: 0,
-        customer_limit: limits.customers,
-        message_limit: limits.messages,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (existing.data) {
-        await supabase
+        const existing = await supabase
           .from("subscriptions")
-          .update(subPayload)
-          .eq("business_id", businessId);
-      } else {
-        await supabase.from("subscriptions").insert({
-          business_id: businessId,
-          ...subPayload,
-        });
+          .select("id")
+          .eq("business_id", businessId)
+          .maybeSingle();
+
+        const subPayload = {
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: stripeSubId,
+          plan,
+          status: "active",
+          current_period_end: periodEnd,
+          message_count_this_period: 0,
+          customer_limit: limits.customers,
+          message_limit: limits.messages,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (existing.data) {
+          await supabase
+            .from("subscriptions")
+            .update(subPayload)
+            .eq("business_id", businessId);
+        } else {
+          await supabase.from("subscriptions").insert({
+            business_id: businessId,
+            ...subPayload,
+          });
+        }
       }
     }
-  }
 
-  // ── Subscription plan changed (upgrade/downgrade) ─────────────────────────
-  if (event.type === "customer.subscription.updated") {
-    const sub = event.data.object as Stripe.Subscription;
+    // ── Subscription plan changed (upgrade/downgrade) ─────────────────────────
+    else if (event.type === "customer.subscription.updated") {
+      const sub = event.data.object as Stripe.Subscription;
 
-    // Try to find the plan from subscription metadata or items
-    const { data: existingSub } = await supabase
-      .from("subscriptions")
-      .select("plan")
-      .eq("stripe_subscription_id", sub.id)
-      .maybeSingle();
+      const { data: existingSub } = await supabase
+        .from("subscriptions")
+        .select("plan")
+        .eq("stripe_subscription_id", sub.id)
+        .maybeSingle();
 
-    const plan = existingSub?.plan ?? "starter";
-    const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.starter;
+      const plan = existingSub?.plan ?? "starter";
+      const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.starter;
 
-    await supabase
-      .from("subscriptions")
-      .update({
-        status: sub.status,
-        current_period_end: getPeriodEnd(sub),
-        customer_limit: limits.customers,
-        message_limit: limits.messages,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("stripe_subscription_id", sub.id);
-  }
-
-  // ── Subscription cancelled ────────────────────────────────────────────────
-  if (event.type === "customer.subscription.deleted") {
-    const sub = event.data.object as Stripe.Subscription;
-    await supabase
-      .from("subscriptions")
-      .update({ status: "cancelled", updated_at: new Date().toISOString() })
-      .eq("stripe_subscription_id", sub.id);
-  }
-
-  // ── Billing cycle resets message usage counter ────────────────────────────
-  if (event.type === "invoice.payment_succeeded") {
-    const invoice = event.data.object as Stripe.Invoice;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const stripeSubId = (invoice as any).subscription as string | null;
-    if (stripeSubId) {
       await supabase
         .from("subscriptions")
         .update({
-          message_count_this_period: 0,
+          status: sub.status,
+          current_period_end: getPeriodEnd(sub),
+          customer_limit: limits.customers,
+          message_limit: limits.messages,
           updated_at: new Date().toISOString(),
         })
-        .eq("stripe_subscription_id", stripeSubId);
+        .eq("stripe_subscription_id", sub.id);
     }
+
+    // ── Subscription cancelled ────────────────────────────────────────────────
+    else if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object as Stripe.Subscription;
+      await supabase
+        .from("subscriptions")
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .eq("stripe_subscription_id", sub.id);
+    }
+
+    // ── Billing cycle resets message usage counter ────────────────────────────
+    else if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stripeSubId = (invoice as any).subscription as string | null;
+      if (stripeSubId) {
+        await supabase
+          .from("subscriptions")
+          .update({
+            message_count_this_period: 0,
+            status: "active",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", stripeSubId);
+      }
+    }
+
+    // ── Payment failed — mark subscription past_due ───────────────────────────
+    else if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stripeSubId = (invoice as any).subscription as string | null;
+      if (stripeSubId) {
+        await supabase
+          .from("subscriptions")
+          .update({ status: "past_due", updated_at: new Date().toISOString() })
+          .eq("stripe_subscription_id", stripeSubId);
+      }
+    }
+  } catch (err) {
+    console.error("Stripe webhook handler error:", err);
+    // Still return 200 so Stripe doesn't retry for our own processing errors.
   }
 
+  // Always return 200 so Stripe stops retrying events we don't handle.
   return NextResponse.json({ received: true });
 }

@@ -24,7 +24,7 @@ export interface BusinessConfig {
   autopilotSendDay?: string;
   autopilotSendTime?: string;
   autopilotTimezone?: string;
-  integrations?: Record<string, { connected: boolean; lastSync?: string }>;
+  integrations?: Record<string, { connected: boolean; lastSync?: string; customersSynced?: number }>;
   oauthTokens?: Record<string, string>;
   emailNotifyReply?: boolean;
   emailNotifyFailed?: boolean;
