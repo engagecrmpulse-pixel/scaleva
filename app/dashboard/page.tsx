@@ -57,6 +57,9 @@ export default async function DashboardPage() {
       .maybeSingle(),
   ]);
 
+  const subscription = (subscriptionData ?? null) as Subscription | null;
+  const isPastDue = subscription?.status === "past_due";
+
   return (
     <DashboardClient
       businessId={business.id}
@@ -69,7 +72,8 @@ export default async function DashboardPage() {
       initialCustomers={(customers ?? []) as Customer[]}
       initialMessages={(messages ?? []) as Message[]}
       initialNotifications={(notifications ?? []) as Notification[]}
-      subscription={(subscriptionData ?? null) as Subscription | null}
+      subscription={subscription}
+      isPastDue={isPastDue}
     />
   );
 }

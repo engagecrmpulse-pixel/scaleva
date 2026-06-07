@@ -167,6 +167,8 @@ export interface Database {
           status: string;
           current_period_end: string | null;
           message_count_this_period: number;
+          customer_limit: number | null;
+          message_limit: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -179,6 +181,8 @@ export interface Database {
           status?: string;
           current_period_end?: string | null;
           message_count_this_period?: number;
+          customer_limit?: number | null;
+          message_limit?: number | null;
           created_at?: string;
           updated_at?: string;
         };

@@ -2,7 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase/server";
 
-const PLAN_PRICE_IDS: Record<string, string | undefined> = {
+const PLAN_LIMITS: Record<string, { customers: number | null; messages: number | null }> = {
+  starter: { customers: 500, messages: 2000 },
+  growth: { customers: 1500, messages: 6000 },
+  pro: { customers: 5000, messages: 25000 },
+  enterprise: { customers: null, messages: null },
+};
+
+const FLAT_PRICE_IDS: Record<string, string | undefined> = {
   starter: process.env.STRIPE_STARTER_PRICE_ID,
   growth: process.env.STRIPE_GROWTH_PRICE_ID,
   pro: process.env.STRIPE_PRO_PRICE_ID,
@@ -26,11 +33,19 @@ export async function POST(request: NextRequest) {
   }
 
   const plan = body.plan ?? "starter";
-  const priceId = PLAN_PRICE_IDS[plan];
 
+  // Enterprise is handled via sales contact — not self-serve checkout.
+  if (plan === "enterprise") {
+    return NextResponse.json(
+      { error: "Enterprise plans require contacting sales." },
+      { status: 400 }
+    );
+  }
+
+  const priceId = FLAT_PRICE_IDS[plan];
   if (!priceId) {
     return NextResponse.json(
-      { error: `No price ID configured for plan: ${plan}` },
+      { error: `No price configured for plan: ${plan}` },
       { status: 400 }
     );
   }
@@ -47,12 +62,11 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   const businessId = businesses?.[0]?.id;
-
+  const limits = PLAN_LIMITS[plan];
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://scaleva.vercel.app";
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
-    payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/dashboard?checkout=success`,
     cancel_url: `${appUrl}/pricing?checkout=cancelled`,
@@ -61,6 +75,8 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       businessId: businessId ?? "",
       plan,
+      customerLimit: String(limits.customers ?? ""),
+      messageLimit: String(limits.messages ?? ""),
     },
   });
 

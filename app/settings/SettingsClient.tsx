@@ -67,9 +67,16 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const limits = PLAN_LIMITS[subscription?.plan ?? "starter"];
+  const isEnterprise = subscription?.plan === "enterprise";
+  const limits = isEnterprise ? null : PLAN_LIMITS[subscription?.plan ?? "starter"];
   const msgUsed = subscription?.message_count_this_period ?? 0;
-  const msgPct = Math.min((msgUsed / limits.messages) * 100, 100);
+  const msgPct = limits ? Math.min((msgUsed / limits.messages) * 100, 100) : 0;
+
+  function barColor(pct: number) {
+    if (pct >= 90) return "bg-red-500";
+    if (pct >= 70) return "bg-yellow-400";
+    return "bg-green-500";
+  }
 
   async function saveProfile() {
     setProfileSaving(true);
@@ -378,27 +385,43 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
               </div>
 
               {/* Usage bar */}
-              <div>
-                <div className="mb-1 flex justify-between text-xs text-content-muted">
-                  <span>Messages this month</span>
-                  <span>{msgUsed.toLocaleString()} / {limits.messages.toLocaleString()}</span>
+              {limits !== null ? (
+                <div>
+                  <div className="mb-1 flex justify-between text-xs text-content-muted">
+                    <span>Messages this month</span>
+                    <span>{msgUsed.toLocaleString()} / {limits.messages.toLocaleString()}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-line">
+                    <div
+                      className={`h-1.5 rounded-full transition-all ${barColor(msgPct)}`}
+                      style={{ width: `${msgPct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-line">
-                  <div
-                    className="h-1.5 rounded-full bg-accent transition-all"
-                    style={{ width: `${msgPct}%` }}
-                  />
-                </div>
-              </div>
+              ) : (
+                <p className="text-xs text-content-muted">
+                  Messages sent this month: {msgUsed.toLocaleString()} (unlimited)
+                </p>
+              )}
 
-              <button
-                type="button"
-                onClick={openBillingPortal}
-                disabled={portalLoading}
-                className="h-9 rounded-btn border border-line px-4 text-sm font-medium text-content-muted hover:border-content-muted hover:text-content transition-colors disabled:opacity-60"
-              >
-                {portalLoading ? "Loading…" : "Manage subscription"}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={openBillingPortal}
+                  disabled={portalLoading}
+                  className="h-9 rounded-btn border border-line px-4 text-sm font-medium text-content-muted hover:border-content-muted hover:text-content transition-colors disabled:opacity-60"
+                >
+                  {portalLoading ? "Loading…" : "Manage subscription"}
+                </button>
+                {subscription.plan !== "enterprise" && (
+                  <a
+                    href="/pricing"
+                    className="inline-flex h-9 items-center rounded-btn border border-accent/40 px-4 text-sm font-medium text-accent hover:bg-accent/5 transition-colors"
+                  >
+                    Upgrade / change plan
+                  </a>
+                )}
+              </div>
             </div>
           ) : (
             <div>

@@ -33,6 +33,7 @@ interface DashboardClientProps {
   initialMessages: Message[];
   initialNotifications: Notification[];
   subscription: Subscription | null;
+  isPastDue: boolean;
 }
 
 const statusTone: Record<
@@ -339,6 +340,7 @@ export function DashboardClient({
   initialMessages,
   initialNotifications,
   subscription,
+  isPastDue,
 }: DashboardClientProps) {
   const [autopilot, setAutopilot] = useState(initialAutopilot);
   const [autopilotSaving, setAutopilotSaving] = useState(false);
@@ -387,9 +389,17 @@ export function DashboardClient({
     return map;
   }, [messages]);
 
-  const msgLimit = PLAN_LIMITS[subscription?.plan ?? "starter"] ?? 2000;
+  const msgLimit = subscription?.plan === "enterprise" ? null : (PLAN_LIMITS[subscription?.plan ?? "starter"] ?? 2000);
+  const custLimit = subscription?.plan === "enterprise" ? null : (subscription?.customer_limit ?? null);
   const msgUsed = subscription?.message_count_this_period ?? 0;
-  const msgPct = Math.min((msgUsed / msgLimit) * 100, 100);
+  const msgPct = msgLimit ? Math.min((msgUsed / msgLimit) * 100, 100) : 0;
+  const custPct = custLimit ? Math.min((customers.length / custLimit) * 100, 100) : 0;
+
+  function barColor(pct: number) {
+    if (pct >= 90) return "bg-red-500";
+    if (pct >= 70) return "bg-yellow-400";
+    return "bg-green-500";
+  }
 
   async function toggleAutopilot() {
     const next = !autopilot;
@@ -480,29 +490,27 @@ export function DashboardClient({
     setAddLoading(true);
     setAddError(null);
 
-    const supabase = createClient();
-    const spendAmount = Number.parseFloat(draft.spend_amount) || 0;
-    const spendHistory =
-      spendAmount > 0
-        ? [{ date: draft.last_purchase || new Date().toISOString(), amount: spendAmount }]
-        : [];
-
-    const { data: newCustomer, error } = await supabase
-      .from("customers")
-      .insert({
-        business_id: businessId,
+    const res = await fetch("/api/customers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         name: draft.name.trim(),
-        phone: draft.phone.trim() || null,
-        email: draft.email.trim() || null,
-        last_purchase: draft.last_purchase || null,
-        spend_history: spendHistory,
-      })
-      .select()
-      .single();
+        phone: draft.phone.trim() || undefined,
+        email: draft.email.trim() || undefined,
+        last_purchase: draft.last_purchase || undefined,
+        spend_amount: Number.parseFloat(draft.spend_amount) || 0,
+      }),
+    });
 
+    const data = (await res.json()) as { customer?: Customer; error?: string };
     setAddLoading(false);
-    if (error || !newCustomer) { setAddError(error?.message ?? "Failed to add customer."); return; }
-    setCustomers((prev) => [...prev, newCustomer]);
+
+    if (!res.ok || !data.customer) {
+      setAddError(data.error ?? "Failed to add customer.");
+      return;
+    }
+
+    setCustomers((prev) => [...prev, data.customer!]);
     setAddOpen(false);
   }
 
@@ -511,7 +519,17 @@ export function DashboardClient({
 
   return (
     <>
-      <div className="flex min-h-screen bg-base">
+      {isPastDue && (
+        <div className="fixed inset-x-0 top-0 z-50 bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2 text-center">
+          <p className="text-xs text-yellow-400">
+            Your payment failed. Update your billing info to keep Scaleva running.{" "}
+            <a href="/settings" className="font-semibold underline">
+              Manage billing →
+            </a>
+          </p>
+        </div>
+      )}
+      <div className={`flex min-h-screen bg-base ${isPastDue ? "pt-9" : ""}`}>
         <Sidebar
           businessName={businessName}
           userEmail={userEmail}
@@ -533,15 +551,33 @@ export function DashboardClient({
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              {/* Usage bar */}
-              {subscription && (
-                <div className="hidden items-center gap-2 sm:flex">
-                  <span className="text-xs text-content-muted">
-                    {msgUsed.toLocaleString()} / {msgLimit.toLocaleString()} msgs
-                  </span>
-                  <div className="h-1 w-20 rounded-full bg-line">
-                    <div className="h-1 rounded-full bg-accent" style={{ width: `${msgPct}%` }} />
+              {/* Usage bars */}
+              {subscription && msgLimit !== null && (
+                <div className="hidden items-center gap-3 sm:flex">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-content-muted">
+                      {msgUsed.toLocaleString()}/{msgLimit.toLocaleString()} msgs
+                    </span>
+                    <div className="h-1.5 w-16 rounded-full bg-line">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${barColor(msgPct)}`}
+                        style={{ width: `${msgPct}%` }}
+                      />
+                    </div>
                   </div>
+                  {custLimit !== null && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-content-muted">
+                        {customers.length}/{custLimit} customers
+                      </span>
+                      <div className="h-1.5 w-16 rounded-full bg-line">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${barColor(custPct)}`}
+                          style={{ width: `${custPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <NotificationBell
@@ -741,7 +777,7 @@ export function DashboardClient({
               </div>
             </div>
           </div>
-        </div>
+          </div>
       </div>
 
       {/* Add Customer slide-over */}

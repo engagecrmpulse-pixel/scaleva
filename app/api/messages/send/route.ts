@@ -4,12 +4,6 @@ import { sendSms } from "@/lib/twilio";
 import { isValidPhone, normalizePhone } from "@/utils/helpers";
 import type { MessageStatus } from "@/utils/database.types";
 
-/**
- * Twilio reports a wide range of message statuses (queued, sending, sent,
- * delivered, undelivered, failed, ...). Map them onto the narrower set the
- * messages table stores; anything we don't explicitly track is recorded as
- * "sent" since the Twilio call itself succeeded.
- */
 function toMessageStatus(twilioStatus: string): MessageStatus {
   switch (twilioStatus) {
     case "queued":
@@ -22,11 +16,6 @@ function toMessageStatus(twilioStatus: string): MessageStatus {
   }
 }
 
-/**
- * POST /api/messages/send
- * Body: { customerId: string; content: string }
- * Sends an SMS via Twilio and logs it to the messages table.
- */
 export async function POST(request: NextRequest) {
   const supabase = createClient();
 
@@ -62,6 +51,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Customer not found" }, { status: 404 });
   }
 
+  // ── Enforce message limit ─────────────────────────────────────────────────
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("message_limit, message_count_this_period, plan")
+    .eq("business_id", customer.business_id)
+    .maybeSingle();
+
+  if (
+    sub &&
+    sub.message_limit !== null &&
+    (sub.message_count_this_period ?? 0) >= sub.message_limit
+  ) {
+    return NextResponse.json(
+      { error: "Monthly message limit reached. Upgrade your plan." },
+      { status: 429 }
+    );
+  }
+
   if (!customer.phone || !isValidPhone(customer.phone)) {
     return NextResponse.json(
       { error: "Customer has no valid phone number" },
@@ -78,7 +85,6 @@ export async function POST(request: NextRequest) {
     status = toMessageStatus(result.status);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unknown error";
-    // Log the failed attempt so it shows up in history.
     await supabase.from("messages").insert({
       customer_id: customer.id,
       business_id: customer.business_id,
@@ -87,6 +93,14 @@ export async function POST(request: NextRequest) {
       direction: "outbound",
       sent_at: new Date().toISOString(),
     });
+
+    // Notify business of failure
+    await supabase.from("notifications").insert({
+      business_id: customer.business_id,
+      type: "failed",
+      content: `Message to ${customer.name} failed to send.`,
+    });
+
     return NextResponse.json(
       { error: "Failed to send SMS", detail },
       { status: 502 }
@@ -111,6 +125,16 @@ export async function POST(request: NextRequest) {
       { error: "Sent, but failed to log message", detail: logError.message },
       { status: 207 }
     );
+  }
+
+  // Increment message count for billing period
+  if (sub) {
+    await supabase
+      .from("subscriptions")
+      .update({
+        message_count_this_period: (sub.message_count_this_period ?? 0) + 1,
+      })
+      .eq("business_id", customer.business_id);
   }
 
   return NextResponse.json({ message: logged });

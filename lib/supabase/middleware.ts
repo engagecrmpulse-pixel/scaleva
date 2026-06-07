@@ -69,7 +69,8 @@ export async function updateSession(request: NextRequest) {
 
       const hasActiveSub =
         sub?.status === "active" ||
-        sub?.status === "trialing";
+        sub?.status === "trialing" ||
+        sub?.status === "past_due";
 
       if (!hasActiveSub) {
         const url = request.nextUrl.clone();
