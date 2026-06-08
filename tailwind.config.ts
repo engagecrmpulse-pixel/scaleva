@@ -13,9 +13,9 @@ const config: Config = {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       colors: {
-        base: "#080B14",
-        surface: "#0F1420",
-        line: "#1E2433",
+        base: "#0F1117",
+        surface: "#1A1D24",
+        line: "#2A2D35",
         content: {
           DEFAULT: "#E8E9EC",
           muted: "#6B7180",
