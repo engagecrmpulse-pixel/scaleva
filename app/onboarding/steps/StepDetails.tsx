@@ -16,6 +16,19 @@ export function StepDetails({ state, update }: StepProps) {
     update({ goals: next });
   }
 
+  const goalsSummary =
+    state.goals.length > 0 ? state.goals.join(", ").toLowerCase() : "re-engaging customers";
+
+  const industryDisplay =
+    state.industry && state.industry !== "Other"
+      ? ` for your ${state.industry.toLowerCase()} business`
+      : "";
+
+  const instructionsPreview =
+    state.customInstructions.trim().length > 0
+      ? `"${state.customInstructions.slice(0, 70)}${state.customInstructions.length > 70 ? "…" : ""}"`
+      : null;
+
   return (
     <div>
       <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
@@ -136,6 +149,30 @@ export function StepDetails({ state, update }: StepProps) {
             value={state.customInstructions}
             onChange={(e) => update({ customInstructions: e.target.value })}
           />
+        </div>
+
+        {/* Live AI preview */}
+        <div className="rounded-card border border-accent/20 bg-accent/5 px-4 py-3.5">
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-accent/70">
+            AI Preview
+          </p>
+          <p className="text-sm leading-relaxed text-content">
+            Your AI will sound{" "}
+            <strong className="text-content">{state.voice.toLowerCase()}</strong> and
+            focus on{" "}
+            <strong className="text-content">{goalsSummary}</strong>
+            {industryDisplay}.{" "}
+            {state.cadence && (
+              <>
+                Messages go out <strong className="text-content">{state.cadence.toLowerCase()}</strong>.{" "}
+              </>
+            )}
+            {instructionsPreview && (
+              <>
+                Extra rule: <span className="text-content-muted italic">{instructionsPreview}</span>
+              </>
+            )}
+          </p>
         </div>
       </div>
     </div>

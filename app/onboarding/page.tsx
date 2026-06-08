@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Wizard } from "./Wizard";
 import type { WizardState } from "./types";
 
-export default function OnboardingPage() {
+function OnboardingInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
@@ -19,15 +19,9 @@ export default function OnboardingPage() {
 
     async function check() {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
+        const { data: { user } } = await supabase.auth.getUser();
         if (!active) return;
-        if (!user) {
-          router.replace("/login");
-          return;
-        }
+        if (!user) { router.replace("/login"); return; }
 
         const { data } = await supabase
           .from("businesses")
@@ -36,12 +30,8 @@ export default function OnboardingPage() {
           .limit(1);
 
         if (!active) return;
-        if (data && data.length > 0) {
-          router.replace("/dashboard");
-          return;
-        }
+        if (data && data.length > 0) { router.replace("/dashboard"); return; }
 
-        // Handle return from OAuth — restore wizard state and sync customers
         const oauthConnected = searchParams.get("oauth_connected");
         if (oauthConnected) {
           try {
@@ -50,22 +40,18 @@ export default function OnboardingPage() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ provider: oauthConnected }),
             });
-            const data = await res.json() as { customers?: unknown[]; tokenValid?: boolean };
+            const data = (await res.json()) as { customers?: unknown[]; tokenValid?: boolean };
             if (active) {
               setInitialState({
                 dataSource: oauthConnected as WizardState["dataSource"],
                 connected: true,
                 customers: (data.customers ?? []) as WizardState["customers"],
               });
-              setInitialStep(3); // advance past connect step
+              setInitialStep(3);
             }
           } catch {
-            // If sync fails, still advance wizard with connected: true
             if (active) {
-              setInitialState({
-                dataSource: oauthConnected as WizardState["dataSource"],
-                connected: true,
-              });
+              setInitialState({ dataSource: oauthConnected as WizardState["dataSource"], connected: true });
               setInitialStep(3);
             }
           }
@@ -76,25 +62,15 @@ export default function OnboardingPage() {
       if (active) setChecking(false);
     }
 
-    const timeout = setTimeout(() => {
-      if (active) setChecking(false);
-    }, 5000);
-
+    const timeout = setTimeout(() => { if (active) setChecking(false); }, 5000);
     void check();
-
-    return () => {
-      active = false;
-      clearTimeout(timeout);
-    };
+    return () => { active = false; clearTimeout(timeout); };
   }, [router, searchParams]);
 
   if (checking) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <span
-          className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-accent"
-          aria-hidden
-        />
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-accent" aria-hidden />
       </main>
     );
   }
@@ -103,12 +79,24 @@ export default function OnboardingPage() {
     <main className="min-h-screen bg-base">
       <div className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-2xl items-center px-6 py-4">
-          <span className="font-heading text-sm font-semibold tracking-tight text-content">
-            Scaleva
-          </span>
+          <span className="font-heading text-sm font-semibold tracking-tight text-content">Scaleva</span>
         </div>
       </div>
       <Wizard initialStep={initialStep} initialState={initialState} />
     </main>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-base">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-accent" aria-hidden />
+        </main>
+      }
+    >
+      <OnboardingInner />
+    </Suspense>
   );
 }

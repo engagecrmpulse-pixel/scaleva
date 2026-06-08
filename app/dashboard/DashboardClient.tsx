@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/Badge";
 import { formatCurrency, formatDate, totalSpend } from "@/utils/helpers";
@@ -42,10 +46,7 @@ interface DashboardClientProps {
   isPastDue: boolean;
 }
 
-const statusTone: Record<
-  MessageStatus,
-  "gray" | "green" | "yellow" | "red" | "brand"
-> = {
+const statusTone: Record<MessageStatus, "gray" | "green" | "yellow" | "red" | "brand"> = {
   queued: "yellow",
   sent: "green",
   delivered: "green",
@@ -61,13 +62,20 @@ interface CustomerDraft {
   spend_amount: string;
 }
 
-const emptyDraft = (): CustomerDraft => ({
-  name: "",
-  phone: "",
-  email: "",
-  last_purchase: "",
-  spend_amount: "",
-});
+const emptyDraft = (): CustomerDraft => ({ name: "", phone: "", email: "", last_purchase: "", spend_amount: "" });
+
+function daysSinceDate(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function DaysBadge({ days }: { days: number | null }) {
+  if (days === null) return <span className="text-xs text-content-muted">—</span>;
+  const cls = days < 14 ? "text-green-400" : days < 30 ? "text-yellow-400" : "text-red-400";
+  return <span className={`font-mono text-xs font-medium ${cls}`}>{days}d</span>;
+}
 
 function NotificationIcon({ type }: { type: string }) {
   if (type === "reply") {
@@ -92,125 +100,73 @@ function NotificationIcon({ type }: { type: string }) {
 }
 
 function Sidebar({
-  businessName,
-  userEmail,
-  autopilot,
-  autopilotSaving,
-  onToggleAutopilot,
-  sendDay,
-  sendTime,
-  isOpen,
-  onClose,
+  businessName, userEmail, autopilot, autopilotSaving, onToggleAutopilot,
+  sendDay, sendTime, isOpen, onClose,
 }: {
-  businessName: string;
-  userEmail?: string | null;
-  autopilot: boolean;
-  autopilotSaving: boolean;
-  onToggleAutopilot: () => void;
-  sendDay: string;
-  sendTime: string;
-  isOpen: boolean;
-  onClose: () => void;
+  businessName: string; userEmail?: string | null; autopilot: boolean;
+  autopilotSaving: boolean; onToggleAutopilot: () => void;
+  sendDay: string; sendTime: string; isOpen: boolean; onClose: () => void;
 }) {
   const router = useRouter();
-
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
   }
-
   return (
     <>
-      {/* Mobile backdrop */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={onClose}
-          aria-hidden
-        />
-      )}
-    <aside className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 md:relative md:translate-x-0 md:z-auto ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
-      <div className="flex h-14 items-center border-b border-line px-5">
-        <span className="font-heading text-sm font-semibold tracking-tight text-content">
-          Scaleva
-        </span>
-      </div>
-
-      <div className="border-b border-line px-5 py-4">
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-content-muted">
-          Business
-        </p>
-        <p className="truncate text-sm font-medium text-content">{businessName}</p>
-      </div>
-
-      <nav className="flex-1 px-3 py-3 space-y-0.5">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-btn bg-accent/10 px-3 py-2 text-sm font-medium text-accent"
-        >
-          <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-          </svg>
-          Dashboard
-        </Link>
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 rounded-btn px-3 py-2 text-sm font-medium text-content-muted hover:bg-base hover:text-content transition-colors"
-        >
-          <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Settings
-        </Link>
-      </nav>
-
-      <div className="border-t border-line px-5 py-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-content-muted">Autopilot</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autopilot}
-            onClick={onToggleAutopilot}
-            disabled={autopilotSaving}
-            className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-            style={{ backgroundColor: autopilot ? "#3B82F6" : "#2A2D35" }}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                autopilot ? "translate-x-4" : "translate-x-0.5"
-              }`}
-            />
+      {isOpen && <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={onClose} aria-hidden />}
+      <aside className={`fixed inset-y-0 left-0 z-40 flex w-60 flex-shrink-0 flex-col border-r border-line bg-surface transition-transform duration-200 md:relative md:translate-x-0 md:z-auto ${isOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="flex h-14 items-center border-b border-line px-5">
+          <span className="font-heading text-sm font-semibold tracking-tight text-content">Scaleva</span>
+        </div>
+        <div className="border-b border-line px-5 py-4">
+          <p className="mb-1 text-[10px] font-medium uppercase tracking-widest text-content-muted">Business</p>
+          <p className="truncate text-sm font-medium text-content">{businessName}</p>
+        </div>
+        <nav className="flex-1 px-3 py-3 space-y-0.5">
+          <Link href="/dashboard" className="flex items-center gap-3 rounded-btn bg-accent/10 px-3 py-2 text-sm font-medium text-accent">
+            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+            Dashboard
+          </Link>
+          <Link href="/settings" className="flex items-center gap-3 rounded-btn px-3 py-2 text-sm font-medium text-content-muted hover:bg-base hover:text-content transition-colors">
+            <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Settings
+          </Link>
+        </nav>
+        <div className="border-t border-line px-5 py-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-content-muted">Autopilot</span>
+            <button
+              type="button" role="switch" aria-checked={autopilot}
+              onClick={onToggleAutopilot} disabled={autopilotSaving}
+              className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              style={{ backgroundColor: autopilot ? "#3B82F6" : "#2A2D35" }}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${autopilot ? "translate-x-4" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+          {autopilot
+            ? <p className="mt-0.5 text-xs text-content-muted">Next send: {sendDay} {sendTime}</p>
+            : <p className="mt-0.5 text-xs text-content-muted">Manual mode</p>
+          }
+        </div>
+        <div className="border-t border-line px-5 py-4">
+          {userEmail && <p className="mb-2 truncate text-xs text-content-muted">{userEmail}</p>}
+          <button type="button" onClick={handleSignOut} className="flex items-center gap-2 text-xs font-medium text-content-muted transition-colors hover:text-content">
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+            </svg>
+            Sign out
           </button>
         </div>
-        {autopilot ? (
-          <p className="mt-0.5 text-xs text-content-muted">
-            Next send: {sendDay} {sendTime}
-          </p>
-        ) : (
-          <p className="mt-0.5 text-xs text-content-muted">Manual mode</p>
-        )}
-      </div>
-
-      <div className="border-t border-line px-5 py-4">
-        {userEmail && (
-          <p className="mb-2 truncate text-xs text-content-muted">{userEmail}</p>
-        )}
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="flex items-center gap-2 text-xs font-medium text-content-muted transition-colors hover:text-content"
-        >
-          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-          </svg>
-          Sign out
-        </button>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }
@@ -218,33 +174,21 @@ function Sidebar({
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-card border border-line bg-surface p-5">
-      <p className="font-mono text-[28px] font-semibold leading-none tracking-tight text-content">
-        {value}
-      </p>
+      <p className="font-mono text-[28px] font-semibold leading-none tracking-tight text-content">{value}</p>
       <p className="mt-2 text-xs text-content-muted">{label}</p>
     </div>
   );
 }
 
-function NotificationBell({
-  notifications,
-  onMarkRead,
-  onMarkAll,
-}: {
-  notifications: Notification[];
-  onMarkRead: (id: string) => void;
-  onMarkAll: () => void;
+function NotificationBell({ notifications, onMarkRead, onMarkAll }: {
+  notifications: Notification[]; onMarkRead: (id: string) => void; onMarkAll: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const unread = notifications.filter((n) => !n.read).length;
-
   return (
     <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="relative flex h-8 w-8 items-center justify-center rounded-btn text-content-muted hover:bg-base hover:text-content transition-colors"
-      >
+      <button type="button" onClick={() => setOpen((o) => !o)}
+        className="relative flex h-8 w-8 items-center justify-center rounded-btn text-content-muted hover:bg-base hover:text-content transition-colors">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
         </svg>
@@ -254,7 +198,6 @@ function NotificationBell({
           </span>
         )}
       </button>
-
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
@@ -262,43 +205,26 @@ function NotificationBell({
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <span className="text-xs font-semibold text-content">Notifications</span>
               {unread > 0 && (
-                <button
-                  type="button"
-                  onClick={() => { onMarkAll(); setOpen(false); }}
-                  className="text-xs text-accent hover:underline"
-                >
+                <button type="button" onClick={() => { onMarkAll(); setOpen(false); }} className="text-xs text-accent hover:underline">
                   Mark all read
                 </button>
               )}
             </div>
             <div className="max-h-80 overflow-y-auto divide-y divide-line">
-              {notifications.length === 0 ? (
-                <p className="px-4 py-6 text-center text-xs text-content-muted">No notifications</p>
-              ) : (
-                notifications.map((n) => (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => onMarkRead(n.id)}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-base transition-colors ${
-                      n.read ? "opacity-60" : ""
-                    }`}
-                  >
-                    <span className="mt-0.5 flex-shrink-0">
-                      <NotificationIcon type={n.type} />
-                    </span>
+              {notifications.length === 0
+                ? <p className="px-4 py-6 text-center text-xs text-content-muted">No notifications</p>
+                : notifications.map((n) => (
+                  <button key={n.id} type="button" onClick={() => onMarkRead(n.id)}
+                    className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-base transition-colors ${n.read ? "opacity-60" : ""}`}>
+                    <span className="mt-0.5 flex-shrink-0"><NotificationIcon type={n.type} /></span>
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-content leading-snug">{n.content}</p>
-                      <p className="mt-0.5 text-[10px] text-content-muted">
-                        {formatDate(n.created_at)}
-                      </p>
+                      <p className="mt-0.5 text-[10px] text-content-muted">{formatDate(n.created_at)}</p>
                     </div>
-                    {!n.read && (
-                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent" />
-                    )}
+                    {!n.read && <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent" />}
                   </button>
                 ))
-              )}
+              }
             </div>
           </div>
         </>
@@ -310,14 +236,9 @@ function NotificationBell({
 function exportCustomersCsv(customers: Customer[]) {
   const headers = ["Name", "Phone", "Email", "Last Purchase", "Total Spend", "Return Visits", "Status", "Next Contact"];
   const rows = customers.map((c) => [
-    c.name,
-    c.phone ?? "",
-    c.email ?? "",
-    c.last_purchase ?? "",
-    totalSpend(c.spend_history).toFixed(2),
-    String(c.return_visit_count ?? 0),
-    c.status ?? "active",
-    c.next_contact_date ?? "",
+    c.name, c.phone ?? "", c.email ?? "", c.last_purchase ?? "",
+    totalSpend(c.spend_history).toFixed(2), String(c.return_visit_count ?? 0),
+    c.status ?? "active", c.next_contact_date ?? "",
   ]);
   const csv = [headers, ...rows].map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
   downloadCsv(csv, "customers.csv");
@@ -325,14 +246,10 @@ function exportCustomersCsv(customers: Customer[]) {
 
 function exportMessagesCsv(messages: Message[], customers: Customer[]) {
   const nameMap = new Map(customers.map((c) => [c.id, c.name]));
-  const headers = ["Customer Name", "Message", "Sent At", "Status", "Direction", "Reply Received"];
+  const headers = ["Customer Name", "Message", "Sent At", "Status", "Direction"];
   const rows = messages.map((m) => [
-    nameMap.get(m.customer_id) ?? "Unknown",
-    m.content,
-    m.sent_at ?? "",
-    m.status,
-    m.direction,
-    m.direction === "inbound" ? "Yes" : "No",
+    nameMap.get(m.customer_id) ?? "Unknown", m.content,
+    m.sent_at ?? "", m.status, m.direction,
   ]);
   const csv = [headers, ...rows].map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
   downloadCsv(csv, "messages.csv");
@@ -342,43 +259,31 @@ function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
+  a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }
 
 export function DashboardClient({
-  businessId,
-  businessName,
-  industry,
-  voice,
-  userEmail,
-  initialAutopilot,
-  config,
-  initialCustomers,
-  initialMessages,
-  initialNotifications,
-  subscription,
-  isPastDue,
+  businessId, businessName, industry, voice, userEmail,
+  initialAutopilot, config, initialCustomers, initialMessages,
+  initialNotifications, subscription, isPastDue,
 }: DashboardClientProps) {
   const [autopilot, setAutopilot] = useState(initialAutopilot);
   const [autopilotSaving, setAutopilotSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [rowState, setRowState] = useState<
-    Record<string, { loading: boolean; error: string | null; returning?: boolean }>
-  >({});
+  const [rowState, setRowState] = useState<Record<string, { loading: boolean; error: string | null; returning?: boolean }>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
-
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<CustomerDraft>(emptyDraft());
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
+  const [sortByDays, setSortByDays] = useState(false);
 
   const sendDay = config.autopilotSendDay ?? "Monday";
   const sendTime = config.autopilotSendTime ?? "9 AM";
@@ -392,29 +297,24 @@ export function DashboardClient({
     }, 4000);
   }, []);
 
-  // Clean up timer on unmount
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
-  const messagesSent = useMemo(
-    () => messages.filter((m) => m.direction === "outbound").length,
-    [messages]
-  );
-  const repliesReceived = useMemo(
-    () => messages.filter((m) => m.direction === "inbound").length,
-    [messages]
-  );
-  const revenueTracked = useMemo(
-    () => customers.reduce((sum, c) => sum + totalSpend(c.spend_history), 0),
-    [customers]
-  );
-  const returnedCount = useMemo(
-    () => customers.filter((c) => (c.return_visit_count ?? 0) > 0).length,
-    [customers]
-  );
+  const messagesSent = useMemo(() => messages.filter((m) => m.direction === "outbound").length, [messages]);
+  const repliesReceived = useMemo(() => messages.filter((m) => m.direction === "inbound").length, [messages]);
+  const revenueTracked = useMemo(() => customers.reduce((sum, c) => sum + totalSpend(c.spend_history), 0), [customers]);
+  const returnedCount = useMemo(() => customers.filter((c) => (c.return_visit_count ?? 0) > 0).length, [customers]);
   const conversionRate = useMemo(() => {
     if (!messagesSent) return 0;
     return Math.round((returnedCount / customers.length) * 100);
   }, [returnedCount, customers.length, messagesSent]);
+  const replyRate = useMemo(() => {
+    if (!messagesSent) return 0;
+    return Math.round((repliesReceived / messagesSent) * 100);
+  }, [messagesSent, repliesReceived]);
+  const returnVisitRate = useMemo(() => {
+    if (!customers.length) return 0;
+    return Math.round((returnedCount / customers.length) * 100);
+  }, [returnedCount, customers.length]);
 
   const latestStatus = useMemo(() => {
     const map = new Map<string, MessageStatus>();
@@ -422,6 +322,50 @@ export function DashboardClient({
       if (!map.has(m.customer_id)) map.set(m.customer_id, m.status);
     }
     return map;
+  }, [messages]);
+
+  const customerMessageMap = useMemo(() => {
+    const map = new Map<string, Message[]>();
+    for (const m of messages) {
+      const arr = map.get(m.customer_id) ?? [];
+      arr.push(m);
+      map.set(m.customer_id, arr);
+    }
+    return map;
+  }, [messages]);
+
+  const sortedCustomers = useMemo(() => {
+    if (!sortByDays) return customers;
+    return [...customers].sort((a, b) => {
+      const da = daysSinceDate(a.last_purchase);
+      const db = daysSinceDate(b.last_purchase);
+      if (da === null) return 1;
+      if (db === null) return -1;
+      return db - da;
+    });
+  }, [customers, sortByDays]);
+
+  const messagesPerDay = useMemo(() => {
+    const tempMap = new Map<string, { sent: number; replies: number }>();
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      tempMap.set(d.toISOString().slice(0, 10), { sent: 0, replies: 0 });
+    }
+    for (const m of messages) {
+      if (!m.sent_at) continue;
+      const key = m.sent_at.slice(0, 10);
+      const day = tempMap.get(key);
+      if (!day) continue;
+      if (m.direction === "outbound") day.sent++;
+      else day.replies++;
+    }
+    return Array.from(tempMap.entries()).map(([key, val]) => ({
+      date: key.slice(5),
+      sent: val.sent,
+      rate: val.sent > 0 ? Math.round((val.replies / val.sent) * 100) : 0,
+    }));
   }, [messages]);
 
   const msgLimit = subscription?.plan === "enterprise" ? null : (PLAN_LIMITS[subscription?.plan ?? "starter"] ?? 2000);
@@ -441,46 +385,35 @@ export function DashboardClient({
     setAutopilot(next);
     setAutopilotSaving(true);
     const supabase = createClient();
-    const nextConfig: BusinessConfig = { ...config, autopilot: next };
-    const { error } = await supabase
-      .from("businesses")
-      .update({ config: nextConfig })
-      .eq("id", businessId);
+    const { error } = await supabase.from("businesses").update({ config: { ...config, autopilot: next } }).eq("id", businessId);
     setAutopilotSaving(false);
     if (error) setAutopilot(!next);
   }
 
   async function generateAndSend(customer: Customer) {
     setRowState((s) => ({ ...s, [customer.id]: { loading: true, error: null } }));
-
     try {
       const genRes = await fetch("/api/messages/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: customer.id }),
       });
       const genData = (await genRes.json()) as { message?: string; error?: string };
       if (!genRes.ok || !genData.message) throw new Error(genData.error ?? "Failed to generate");
 
       const sendRes = await fetch("/api/messages/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: customer.id, content: genData.message }),
       });
       const sendData = (await sendRes.json()) as { message?: Message; error?: string; detail?: string };
       if (!sendRes.ok || !sendData.message) {
         throw new Error(sendData.detail ? `${sendData.error}: ${sendData.detail}` : (sendData.error ?? "Failed to send"));
       }
-
       setMessages((prev) => [sendData.message as Message, ...prev]);
       setRowState((s) => ({ ...s, [customer.id]: { loading: false, error: null } }));
       addToast("Message sent!", "success");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong";
-      setRowState((s) => ({
-        ...s,
-        [customer.id]: { loading: false, error: msg },
-      }));
+      setRowState((s) => ({ ...s, [customer.id]: { loading: false, error: msg } }));
       addToast(msg, "error");
     }
   }
@@ -488,8 +421,7 @@ export function DashboardClient({
   const markReturnVisit = useCallback(async (customer: Customer) => {
     setRowState((s) => ({ ...s, [customer.id]: { ...(s[customer.id] ?? { loading: false, error: null }), returning: true } }));
     const res = await fetch("/api/customers/return-visit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ customerId: customer.id }),
     });
     const data = (await res.json()) as { customer?: Customer; error?: string };
@@ -502,8 +434,7 @@ export function DashboardClient({
   async function markNotificationRead(id: string) {
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
   }
@@ -511,50 +442,31 @@ export function DashboardClient({
   async function markAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     await fetch("/api/notifications", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ markAll: true }),
     });
   }
 
-  function openAddSlider() {
-    setDraft(emptyDraft());
-    setAddError(null);
-    setAddOpen(true);
-  }
-
   async function addCustomer() {
     if (!draft.name.trim()) { setAddError("Name is required."); return; }
-    setAddLoading(true);
-    setAddError(null);
-
+    setAddLoading(true); setAddError(null);
     const res = await fetch("/api/customers", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: draft.name.trim(),
-        phone: draft.phone.trim() || undefined,
-        email: draft.email.trim() || undefined,
-        last_purchase: draft.last_purchase || undefined,
+        name: draft.name.trim(), phone: draft.phone.trim() || undefined,
+        email: draft.email.trim() || undefined, last_purchase: draft.last_purchase || undefined,
         spend_amount: Number.parseFloat(draft.spend_amount) || 0,
       }),
     });
-
     const data = (await res.json()) as { customer?: Customer; error?: string };
     setAddLoading(false);
-
-    if (!res.ok || !data.customer) {
-      setAddError(data.error ?? "Failed to add customer.");
-      return;
-    }
-
+    if (!res.ok || !data.customer) { setAddError(data.error ?? "Failed to add customer."); return; }
     setCustomers((prev) => [...prev, data.customer!]);
     setAddOpen(false);
     addToast(`${draft.name} added!`, "success");
   }
 
-  const slideInputClass =
-    "w-full rounded-btn border border-line bg-base px-3 py-2.5 text-sm text-content placeholder:text-content-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
+  const slideInputClass = "w-full rounded-btn border border-line bg-base px-3 py-2.5 text-sm text-content placeholder:text-content-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
 
   return (
     <>
@@ -562,35 +474,23 @@ export function DashboardClient({
         <div className="fixed inset-x-0 top-0 z-50 bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2 text-center">
           <p className="text-xs text-yellow-400">
             Your payment failed. Update your billing info to keep Scaleva running.{" "}
-            <a href="/settings" className="font-semibold underline">
-              Manage billing →
-            </a>
+            <a href="/settings" className="font-semibold underline">Manage billing →</a>
           </p>
         </div>
       )}
       <div className={`flex min-h-screen bg-base ${isPastDue ? "pt-9" : ""}`}>
         <Sidebar
-          businessName={businessName}
-          userEmail={userEmail}
-          autopilot={autopilot}
-          autopilotSaving={autopilotSaving}
-          onToggleAutopilot={toggleAutopilot}
-          sendDay={sendDay}
-          sendTime={sendTime}
-          isOpen={sidebarOpen}
+          businessName={businessName} userEmail={userEmail} autopilot={autopilot}
+          autopilotSaving={autopilotSaving} onToggleAutopilot={toggleAutopilot}
+          sendDay={sendDay} sendTime={sendTime} isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Topbar */}
           <div className="flex h-14 flex-shrink-0 items-center border-b border-line bg-surface px-4 md:px-6">
-            {/* Hamburger — mobile only */}
-            <button
-              type="button"
-              onClick={() => setSidebarOpen((o) => !o)}
-              className="mr-3 flex h-8 w-8 items-center justify-center rounded-btn text-content-muted hover:bg-base hover:text-content md:hidden"
-              aria-label="Toggle menu"
-            >
+            <button type="button" onClick={() => setSidebarOpen((o) => !o)}
+              className="mr-3 flex h-8 w-8 items-center justify-center rounded-btn text-content-muted hover:bg-base hover:text-content md:hidden" aria-label="Toggle menu">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
@@ -603,53 +503,40 @@ export function DashboardClient({
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3">
-              {/* Usage bars */}
               {subscription && msgLimit !== null && (
                 <div className="hidden items-center gap-3 sm:flex">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-content-muted">
-                      {msgUsed.toLocaleString()}/{msgLimit.toLocaleString()} msgs
-                    </span>
+                    <span className="text-xs text-content-muted">{msgUsed.toLocaleString()}/{msgLimit.toLocaleString()} msgs</span>
                     <div className="h-1.5 w-16 rounded-full bg-line">
-                      <div
-                        className={`h-1.5 rounded-full transition-all ${barColor(msgPct)}`}
-                        style={{ width: `${msgPct}%` }}
-                      />
+                      <div className={`h-1.5 rounded-full transition-all ${barColor(msgPct)}`} style={{ width: `${msgPct}%` }} />
                     </div>
                   </div>
                   {custLimit !== null && (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-content-muted">
-                        {customers.length}/{custLimit} customers
-                      </span>
+                      <span className="text-xs text-content-muted">{customers.length}/{custLimit} customers</span>
                       <div className="h-1.5 w-16 rounded-full bg-line">
-                        <div
-                          className={`h-1.5 rounded-full transition-all ${barColor(custPct)}`}
-                          style={{ width: `${custPct}%` }}
-                        />
+                        <div className={`h-1.5 rounded-full transition-all ${barColor(custPct)}`} style={{ width: `${custPct}%` }} />
                       </div>
                     </div>
                   )}
                 </div>
               )}
-              <NotificationBell
-                notifications={notifications}
-                onMarkRead={markNotificationRead}
-                onMarkAll={markAllRead}
-              />
+              <NotificationBell notifications={notifications} onMarkRead={markNotificationRead} onMarkAll={markAllRead} />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl px-6 py-8">
-              {/* Stats */}
-              <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
+              {/* Stats — 8 cards */}
+              <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard label="Total customers" value={String(customers.length)} />
                 <StatCard label="Messages sent" value={String(messagesSent)} />
                 <StatCard label="Replies received" value={String(repliesReceived)} />
                 <StatCard label="Revenue tracked" value={formatCurrency(revenueTracked)} />
                 <StatCard label="Customers returned" value={String(returnedCount)} />
                 <StatCard label="Conversion rate" value={`${conversionRate}%`} />
+                <StatCard label="Reply rate" value={`${replyRate}%`} />
+                <StatCard label="Return visit rate" value={`${returnVisitRate}%`} />
               </div>
 
               <div className="grid gap-5 lg:grid-cols-3">
@@ -658,13 +545,9 @@ export function DashboardClient({
                   <div className="flex items-center justify-between border-b border-line px-6 py-4">
                     <h2 className="font-heading text-sm font-semibold text-content">Customers</h2>
                     <div className="flex items-center gap-2">
-                      {/* Export dropdown */}
                       <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setExportOpen((o) => !o)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content"
-                        >
+                        <button type="button" onClick={() => setExportOpen((o) => !o)}
+                          className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content">
                           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                           </svg>
@@ -674,29 +557,20 @@ export function DashboardClient({
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
                             <div className="absolute right-0 top-9 z-20 w-52 rounded-card border border-line bg-surface shadow-xl">
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-content hover:bg-base"
-                                onClick={() => { exportCustomersCsv(customers); setExportOpen(false); }}
-                              >
+                              <button type="button" className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-content hover:bg-base"
+                                onClick={() => { exportCustomersCsv(customers); setExportOpen(false); }}>
                                 Export customers CSV
                               </button>
-                              <button
-                                type="button"
-                                className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-xs text-content hover:bg-base"
-                                onClick={() => { exportMessagesCsv(messages, customers); setExportOpen(false); }}
-                              >
+                              <button type="button" className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-xs text-content hover:bg-base"
+                                onClick={() => { exportMessagesCsv(messages, customers); setExportOpen(false); }}>
                                 Export messages CSV
                               </button>
                             </div>
                           </>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={openAddSlider}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content"
-                      >
+                      <button type="button" onClick={() => { setDraft(emptyDraft()); setAddError(null); setAddOpen(true); }}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content">
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
@@ -717,74 +591,98 @@ export function DashboardClient({
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Name</th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Phone</th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Last purchase</th>
+                          <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">
+                            <button type="button" onClick={() => setSortByDays(!sortByDays)}
+                              className="flex items-center gap-1 hover:text-content transition-colors">
+                              Days since
+                              {sortByDays
+                                ? <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                                : <svg className="h-3 w-3 opacity-40" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" /></svg>
+                              }
+                            </button>
+                          </th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Status</th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Returned</th>
                           <th className="px-4 py-3" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
-                        {customers.map((customer) => {
+                        {sortedCustomers.map((customer) => {
                           const status = latestStatus.get(customer.id);
                           const row = rowState[customer.id];
                           const customerStatus = customer.status;
+                          const days = daysSinceDate(customer.last_purchase);
+                          const expanded = expandedCustomer === customer.id;
+                          const customerMessages = customerMessageMap.get(customer.id) ?? [];
                           return (
-                            <tr
-                              key={customer.id}
-                              className="group relative border-l-2 border-l-transparent align-top transition-colors hover:border-l-accent hover:bg-accent/5"
-                            >
-                              <td className="px-6 py-3.5">
-                                <div className="font-medium text-content">{customer.name}</div>
-                                <div className="font-mono text-xs text-content-muted">
-                                  {formatCurrency(totalSpend(customer.spend_history))}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3.5 text-content-muted">{customer.phone ?? "—"}</td>
-                              <td className="px-4 py-3.5 text-content-muted">{formatDate(customer.last_purchase)}</td>
-                              <td className="px-4 py-3.5">
-                                {customerStatus === "replied" ? (
-                                  <Badge tone="brand">replied</Badge>
-                                ) : status ? (
-                                  <Badge tone={statusTone[status]}>{status}</Badge>
-                                ) : (
-                                  <Badge tone="gray">not sent</Badge>
-                                )}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span className="font-mono text-xs text-content-muted">
-                                  {customer.return_visit_count ?? 0}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-right">
-                                <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    type="button"
-                                    disabled={row?.returning}
-                                    onClick={() => markReturnVisit(customer)}
-                                    className="inline-flex h-7 items-center rounded-btn border border-line bg-surface px-2 text-xs font-medium text-content-muted hover:border-green-500/40 hover:text-green-400 disabled:opacity-40"
-                                  >
-                                    {row?.returning ? "…" : "Returned"}
+                            <Fragment key={customer.id}>
+                              <tr className="group relative border-l-2 border-l-transparent align-top transition-colors hover:border-l-accent hover:bg-accent/5">
+                                <td className="px-6 py-3.5">
+                                  <button type="button" onClick={() => setExpandedCustomer(expanded ? null : customer.id)} className="text-left">
+                                    <div className="font-medium text-content hover:text-accent transition-colors">
+                                      {customer.name}
+                                      {customerMessages.length > 0 && (
+                                        <span className="ml-1.5 font-mono text-[10px] text-content-muted">
+                                          {expanded ? "▲" : "▼"}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="font-mono text-xs text-content-muted">{formatCurrency(totalSpend(customer.spend_history))}</div>
                                   </button>
-                                  <button
-                                    type="button"
-                                    disabled={row?.loading}
-                                    onClick={() => generateAndSend(customer)}
-                                    className="inline-flex h-7 items-center rounded-btn border border-line bg-surface px-2.5 text-xs font-medium text-content-muted hover:border-content-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
-                                  >
-                                    {row?.loading ? (
-                                      <>
-                                        <span className="mr-1.5 h-3 w-3 animate-spin rounded-full border border-content-muted/40 border-t-content-muted" />
-                                        Sending...
-                                      </>
+                                </td>
+                                <td className="px-4 py-3.5 text-content-muted">{customer.phone ?? "—"}</td>
+                                <td className="px-4 py-3.5 text-content-muted">{formatDate(customer.last_purchase)}</td>
+                                <td className="px-4 py-3.5"><DaysBadge days={days} /></td>
+                                <td className="px-4 py-3.5">
+                                  {customerStatus === "replied" ? (
+                                    <Badge tone="brand">replied</Badge>
+                                  ) : status ? (
+                                    <Badge tone={statusTone[status]}>{status}</Badge>
+                                  ) : (
+                                    <Badge tone="gray">not sent</Badge>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  <span className="font-mono text-xs text-content-muted">{customer.return_visit_count ?? 0}</span>
+                                </td>
+                                <td className="px-4 py-3.5 text-right">
+                                  <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button type="button" disabled={row?.returning} onClick={() => markReturnVisit(customer)}
+                                      className="inline-flex h-7 items-center rounded-btn border border-line bg-surface px-2 text-xs font-medium text-content-muted hover:border-green-500/40 hover:text-green-400 disabled:opacity-40">
+                                      {row?.returning ? "…" : "Returned"}
+                                    </button>
+                                    <button type="button" disabled={row?.loading} onClick={() => generateAndSend(customer)}
+                                      className="inline-flex h-7 items-center rounded-btn border border-line bg-surface px-2.5 text-xs font-medium text-content-muted hover:border-content-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40">
+                                      {row?.loading ? (
+                                        <><span className="mr-1.5 h-3 w-3 animate-spin rounded-full border border-content-muted/40 border-t-content-muted" />Sending...</>
+                                      ) : "Send"}
+                                    </button>
+                                  </div>
+                                  {row?.error && <p className="mt-1 text-right text-xs text-danger">{row.error}</p>}
+                                </td>
+                              </tr>
+                              {expanded && (
+                                <tr>
+                                  <td colSpan={7} className="bg-base px-6 py-3">
+                                    {customerMessages.length === 0 ? (
+                                      <p className="text-xs text-content-muted">No messages sent to {customer.name} yet.</p>
                                     ) : (
-                                      "Send"
+                                      <div className="space-y-2">
+                                        {customerMessages.map((m) => (
+                                          <div key={m.id} className="flex items-start gap-3">
+                                            <Badge tone={m.direction === "inbound" ? "brand" : "gray"}>
+                                              {m.direction === "inbound" ? "Reply" : "Sent"}
+                                            </Badge>
+                                            <span className="flex-1 text-xs text-content">{m.content}</span>
+                                            <span className="flex-shrink-0 text-xs text-content-muted">{formatDate(m.sent_at)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
                                     )}
-                                  </button>
-                                </div>
-                                {row?.error && (
-                                  <p className="mt-1 text-right text-xs text-danger">{row.error}</p>
-                                )}
-                              </td>
-                            </tr>
+                                  </td>
+                                </tr>
+                              )}
+                            </Fragment>
                           );
                         })}
                       </tbody>
@@ -812,13 +710,11 @@ export function DashboardClient({
                             </Badge>
                             <span className="text-xs text-content-muted">{formatDate(message.sent_at)}</span>
                           </div>
-                          <div
-                            className={`inline-block max-w-full rounded-card px-3.5 py-2.5 text-xs leading-relaxed ${
-                              message.direction === "inbound"
-                                ? "rounded-tr-sm bg-blue-500/10 text-content border border-blue-500/20"
-                                : "rounded-tl-sm bg-accent/10 text-content border border-accent/20"
-                            }`}
-                          >
+                          <div className={`inline-block max-w-full rounded-card px-3.5 py-2.5 text-xs leading-relaxed ${
+                            message.direction === "inbound"
+                              ? "rounded-tr-sm bg-blue-500/10 text-content border border-blue-500/20"
+                              : "rounded-tl-sm bg-accent/10 text-content border border-accent/20"
+                          }`}>
                             {message.content}
                           </div>
                         </div>
@@ -827,9 +723,47 @@ export function DashboardClient({
                   </div>
                 </div>
               </div>
+
+              {/* Analytics charts */}
+              <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                <div className="rounded-card border border-line bg-surface p-5">
+                  <h3 className="mb-4 font-heading text-sm font-semibold text-content">Messages sent — last 30 days</h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={messagesPerDay} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2A2D35" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false}
+                        interval={5} />
+                      <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ background: "#1a1d24", border: "1px solid #2A2D35", borderRadius: "8px", fontSize: "12px" }}
+                        labelStyle={{ color: "#9ca3af" }} itemStyle={{ color: "#e5e7eb" }}
+                      />
+                      <Bar dataKey="sent" fill="#3B82F6" radius={[3, 3, 0, 0]} maxBarSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="rounded-card border border-line bg-surface p-5">
+                  <h3 className="mb-4 font-heading text-sm font-semibold text-content">Reply rate % — last 30 days</h3>
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={messagesPerDay} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#2A2D35" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} interval={5} />
+                      <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]}
+                        tickFormatter={(v: number) => `${v}%`} />
+                      <Tooltip
+                        contentStyle={{ background: "#1a1d24", border: "1px solid #2A2D35", borderRadius: "8px", fontSize: "12px" }}
+                        labelStyle={{ color: "#9ca3af" }} itemStyle={{ color: "#e5e7eb" }}
+                        formatter={(v: unknown) => [`${v as number}%`, "Reply rate"]}
+                      />
+                      <Line type="monotone" dataKey="rate" stroke="#3B82F6" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
           </div>
-          </div>
+        </div>
       </div>
 
       {/* Add Customer slide-over */}
@@ -839,17 +773,13 @@ export function DashboardClient({
           <div className="flex w-full max-w-sm flex-col border-l border-line bg-surface shadow-2xl">
             <div className="flex items-center justify-between border-b border-line px-6 py-4">
               <h2 className="font-heading text-sm font-semibold text-content">Add customer</h2>
-              <button
-                type="button"
-                onClick={() => setAddOpen(false)}
-                className="rounded-btn p-1 text-content-muted transition-colors hover:bg-base hover:text-content"
-              >
+              <button type="button" onClick={() => setAddOpen(false)}
+                className="rounded-btn p-1 text-content-muted transition-colors hover:bg-base hover:text-content">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-
             <div className="flex-1 overflow-y-auto space-y-4 px-6 py-5">
               {(
                 [
@@ -862,75 +792,42 @@ export function DashboardClient({
               ).map(({ label, field, placeholder, type }) => (
                 <div key={field}>
                   <label className="mb-1.5 block text-xs font-medium text-content-muted">{label}</label>
-                  <input
-                    type={type}
-                    value={draft[field]}
+                  <input type={type} value={draft[field]}
                     onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
-                    placeholder={placeholder}
-                    min={type === "number" ? 0 : undefined}
-                    step={type === "number" ? "0.01" : undefined}
-                    className={slideInputClass}
-                  />
+                    placeholder={placeholder} min={type === "number" ? 0 : undefined}
+                    step={type === "number" ? "0.01" : undefined} className={slideInputClass} />
                 </div>
               ))}
               {addError && <p className="text-xs text-danger">{addError}</p>}
             </div>
-
             <div className="flex gap-2.5 border-t border-line px-6 py-4">
-              <button
-                type="button"
-                onClick={() => setAddOpen(false)}
-                disabled={addLoading}
-                className="flex-1 h-9 rounded-btn border border-line text-sm font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content disabled:opacity-60"
-              >
+              <button type="button" onClick={() => setAddOpen(false)} disabled={addLoading}
+                className="flex-1 h-9 rounded-btn border border-line text-sm font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content disabled:opacity-60">
                 Cancel
               </button>
-              <button
-                type="button"
-                onClick={addCustomer}
-                disabled={addLoading}
-                className="flex flex-1 h-9 items-center justify-center gap-2 rounded-btn bg-accent text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
-              >
+              <button type="button" onClick={addCustomer} disabled={addLoading}
+                className="flex flex-1 h-9 items-center justify-center gap-2 rounded-btn bg-accent text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60">
                 {addLoading ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />
-                    Adding...
-                  </>
-                ) : (
-                  "Add customer"
-                )}
+                  <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />Adding...</>
+                ) : "Add customer"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast notifications */}
+      {/* Toasts */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`flex items-center gap-2.5 rounded-card border px-4 py-3 text-sm shadow-xl backdrop-blur-sm transition-all ${
-              t.variant === "success"
-                ? "border-green-500/30 bg-green-500/10 text-green-400"
-                : "border-danger/30 bg-danger/10 text-danger"
-            }`}
-          >
-            {t.variant === "success" ? (
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
-            ) : (
-              <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-            )}
+          <div key={t.id} className={`flex items-center gap-2.5 rounded-card border px-4 py-3 text-sm shadow-xl backdrop-blur-sm transition-all ${
+            t.variant === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-danger/30 bg-danger/10 text-danger"
+          }`}>
+            {t.variant === "success"
+              ? <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+              : <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+            }
             {t.message}
-            <button
-              type="button"
-              onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
-              className="ml-1 opacity-60 hover:opacity-100"
-            >
+            <button type="button" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))} className="ml-1 opacity-60 hover:opacity-100">
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>

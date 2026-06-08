@@ -69,6 +69,9 @@ export function Wizard({ initialStep = 1, initialState }: WizardProps) {
     <div className="mx-auto w-full max-w-2xl px-4 py-12">
       {/* Step indicators */}
       <div className="mb-10">
+        <p className="mb-3 text-xs text-content-muted">
+          Step {step} of {TOTAL_STEPS}
+        </p>
         <div className="flex items-center">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => {
             const n = i + 1;

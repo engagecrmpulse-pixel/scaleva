@@ -11,10 +11,22 @@ interface StepLaunchProps extends StepProps {
   onBack: () => void;
 }
 
+function firstSendDate(cadence: string): string {
+  const now = new Date();
+  let daysOut = 7;
+  if (cadence === "Daily") daysOut = 1;
+  else if (cadence === "Every 3 days") daysOut = 3;
+  else if (cadence === "Bi-weekly") daysOut = 14;
+  else if (cadence === "Monthly") daysOut = 30;
+  const d = new Date(now.getTime() + daysOut * 86400000);
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 export function StepLaunch({ state, onBack }: StepLaunchProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [launched, setLaunched] = useState(false);
 
   async function goLive() {
     setLoading(true);
@@ -61,12 +73,7 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       const rows = state.customers.map((c) => {
         const spend_history: SpendHistoryEntry[] =
           c.spend_amount > 0
-            ? [
-                {
-                  date: c.last_purchase || new Date().toISOString(),
-                  amount: c.spend_amount,
-                },
-              ]
+            ? [{ date: c.last_purchase || new Date().toISOString(), amount: c.spend_amount }]
             : [];
         return {
           business_id: business.id,
@@ -78,21 +85,71 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
         };
       });
 
-      const { error: customersError } = await supabase
-        .from("customers")
-        .insert(rows);
+      const { error: customersError } = await supabase.from("customers").insert(rows);
 
       if (customersError) {
         setLoading(false);
-        setError(
-          `Business created, but importing customers failed: ${customersError.message}`
-        );
+        setError(`Business created, but importing customers failed: ${customersError.message}`);
         return;
       }
     }
 
-    router.push("/dashboard");
-    router.refresh();
+    setLoading(false);
+    setLaunched(true);
+    setTimeout(() => {
+      router.push("/dashboard");
+      router.refresh();
+    }, 2200);
+  }
+
+  if (launched) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="relative flex h-20 w-20 items-center justify-center">
+          <svg
+            className="h-20 w-20 animate-[spin_0.6s_ease-out_forwards]"
+            viewBox="0 0 80 80"
+            fill="none"
+          >
+            <circle
+              cx="40"
+              cy="40"
+              r="36"
+              stroke="#3B82F6"
+              strokeWidth="4"
+              strokeDasharray="226"
+              strokeDashoffset="0"
+              className="animate-[draw_0.6s_ease-out_forwards]"
+              style={{ strokeDashoffset: 0 }}
+            />
+          </svg>
+          <svg
+            className="absolute h-10 w-10 animate-[fadeIn_0.3s_ease-out_0.4s_both]"
+            fill="none"
+            stroke="#3B82F6"
+            strokeWidth={2.5}
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+
+        <h2 className="mt-5 font-heading text-xl font-semibold tracking-tight text-content">
+          You&apos;re live!
+        </h2>
+        <p className="mt-1.5 text-sm text-content-muted">
+          Taking you to your dashboard…
+        </p>
+
+        <div className="mt-6 w-full max-w-sm rounded-card border border-line bg-base p-5 text-left">
+          <SummaryRow label="Business" value={state.businessName} />
+          <SummaryRow label="Industry" value={state.industry} />
+          <SummaryRow label="Customers" value={String(state.customers.length)} />
+          <SummaryRow label="Cadence" value={state.cadence} />
+          <SummaryRow label="First send" value={firstSendDate(state.cadence)} />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -107,15 +164,10 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       <dl className="mt-6 divide-y divide-line rounded-card border border-line bg-base">
         <SummaryRow label="Business name" value={state.businessName || "—"} />
         <SummaryRow label="Industry" value={state.industry} />
-        <SummaryRow
-          label="Customers imported"
-          value={String(state.customers.length)}
-        />
+        <SummaryRow label="Customers imported" value={String(state.customers.length)} />
         <SummaryRow label="Message cadence" value={state.cadence} />
-        <SummaryRow
-          label="Goals"
-          value={state.goals.length ? state.goals.join(", ") : "—"}
-        />
+        <SummaryRow label="Goals" value={state.goals.length ? state.goals.join(", ") : "—"} />
+        <SummaryRow label="First send date" value={firstSendDate(state.cadence)} />
       </dl>
 
       {error && <p className="mt-4 text-xs text-danger">{error}</p>}
@@ -127,10 +179,7 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
         <Button size="lg" onClick={goLive} disabled={loading}>
           {loading ? (
             <span className="flex items-center gap-2">
-              <span
-                className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                aria-hidden
-              />
+              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden />
               Launching...
             </span>
           ) : (

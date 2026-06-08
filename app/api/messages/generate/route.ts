@@ -22,6 +22,35 @@ function avgSpend(history: SpendHistoryEntry[]): number {
   return totalSpend(history) / history.length;
 }
 
+function extractDescriptions(history: SpendHistoryEntry[], limit = 4): string {
+  const items = history
+    .filter((h) => h.description?.trim())
+    .slice(-limit)
+    .map((h) => h.description!.trim())
+    .filter((v, i, arr) => arr.indexOf(v) === i);
+  return items.join(", ");
+}
+
+function visitFrequency(history: SpendHistoryEntry[]): string {
+  if (history.length < 2) return "";
+  const sorted = history.map((h) => new Date(h.date).getTime()).sort((a, b) => a - b);
+  const spanDays = (sorted[sorted.length - 1] - sorted[0]) / 86400000;
+  if (spanDays === 0) return "";
+  const avgGap = Math.round(spanDays / (history.length - 1));
+  if (avgGap <= 7) return "weekly";
+  if (avgGap <= 14) return "every couple of weeks";
+  if (avgGap <= 35) return "roughly monthly";
+  return "occasionally";
+}
+
+function currentSeason(): string {
+  const m = new Date().getMonth();
+  if (m >= 2 && m <= 4) return "spring";
+  if (m >= 5 && m <= 7) return "summer";
+  if (m >= 8 && m <= 10) return "fall";
+  return "winter";
+}
+
 function buildSystemPrompt(
   industry: string,
   voice: string,
@@ -31,50 +60,120 @@ function buildSystemPrompt(
   daysSinceLastVisit: number | null,
   lastPurchase: string | null,
   avgSpendAmount: number,
-  totalSpendAmount: number
+  totalSpendAmount: number,
+  history: SpendHistoryEntry[]
 ): string {
+  const firstName = customerFirstName.split(" ")[0];
   const goalList = goals.toLowerCase();
   const hasLoyalty = goalList.includes("loyalty");
-  const firstName = customerFirstName.split(" ")[0];
-  const visitNote = daysSinceLastVisit !== null
-    ? `It has been ${daysSinceLastVisit} days since their last visit.`
-    : "";
+  const ind = industry.toLowerCase();
+  const items = extractDescriptions(history);
+  const freq = visitFrequency(history);
+  const season = currentSeason();
 
   let industryGuidance = "";
-  const ind = industry.toLowerCase();
 
   if (ind === "restaurant") {
-    industryGuidance = `This is a restaurant. ${visitNote} Encourage ${firstName} to come back${hasLoyalty ? " and mention loyalty rewards" : ""}. Reference their last visit warmly.`;
-  } else if (ind === "construction") {
-    industryGuidance = `This is a construction business. Reference their last project${lastPurchase ? ` (around ${lastPurchase})` : ""}. Suggest seasonal follow-up or maintenance check.`;
+    const dishNote = items
+      ? `Their recent orders include: ${items}. Reference a specific dish by name in the message.`
+      : "Reference the food experience.";
+    const freqNote = freq ? `They usually come in ${freq}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `It has been ${daysSinceLastVisit} days since their last visit.` : "";
+    industryGuidance =
+      `This is a restaurant. ${daysNote} ${freqNote} ${dishNote} ` +
+      `Avg transaction: ${formatCurrency(avgSpendAmount)}. ` +
+      `Sound like a staff member or manager texting personally — never generic. ` +
+      `${hasLoyalty ? "Mention loyalty rewards or a perk. " : ""}` +
+      `NEVER say "we miss you" or "valued customer." NEVER sound like a newsletter.`;
   } else if (ind === "salon") {
-    industryGuidance = `This is a salon. ${visitNote} Suggest booking their next appointment${hasLoyalty ? " and mention loyalty rewards" : ""}. Reference their last service.`;
+    const serviceNote = items
+      ? `Their last services: ${items}.`
+      : "Reference their last salon visit.";
+    const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days since their last appointment.` : "";
+    const freqNote = freq ? `They usually come in ${freq}.` : "";
+    industryGuidance =
+      `This is a salon or beauty business. ${daysNote} ${freqNote} ${serviceNote} ` +
+      `Write exactly like their personal stylist or esthetician texting — warm, casual, first name only. ` +
+      `Suggest booking their next appointment naturally. ` +
+      `${hasLoyalty ? "Mention a loyalty perk or discount. " : ""}` +
+      `NEVER say "we miss you" or "valued customer." NEVER use formal business language.`;
+  } else if (ind === "construction") {
+    const projectNote = items
+      ? `Last project type: ${items}. Avg project value: ${formatCurrency(avgSpendAmount)}.`
+      : `Avg project value: ${formatCurrency(avgSpendAmount)}.`;
+    industryGuidance =
+      `This is a construction or contracting business. Current season: ${season}. ${projectNote} ` +
+      `Suggest a seasonal follow-up, maintenance check, or new project idea relevant to ${season}. ` +
+      `Reference the type of work they've had done. Professional but warm tone. ` +
+      `Total relationship value: ${formatCurrency(totalSpendAmount)}. ` +
+      `Sound like the owner or contractor checking in personally.`;
   } else if (ind === "retail") {
-    industryGuidance = `This is a retail business. Reference their last purchase and suggest related products or a return visit.`;
+    const itemNote = items
+      ? `Recent purchases: ${items}.`
+      : "Reference their shopping history.";
+    const freqNote = freq ? `They shop ${freq}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `Last visited ${daysSinceLastVisit} days ago.` : "";
+    industryGuidance =
+      `This is a retail store. ${daysNote} ${freqNote} ${itemNote} ` +
+      `Sound like a friend who works at the store and just saw something they'd love. ` +
+      `Reference the specific item(s) they've bought before. Avg purchase: ${formatCurrency(avgSpendAmount)}. ` +
+      `${hasLoyalty ? "Mention a member perk or exclusive deal. " : ""}` +
+      `NEVER say "valued customer" or use any formal marketing language.`;
   } else if (ind === "fitness") {
-    industryGuidance = `This is a fitness business. ${visitNote} Motivate ${firstName} to re-engage and get back on track.`;
+    const classNote = items ? `Their usual activities: ${items}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `They haven't checked in for ${daysSinceLastVisit} days.` : "";
+    const streakNote = history.length > 1 ? `They've visited ${history.length} times total.` : "";
+    industryGuidance =
+      `This is a gym or fitness business. ${daysNote} ${streakNote} ${classNote} ` +
+      `Be motivating and energetic — never shaming or guilt-tripping. ` +
+      `Sound like their trainer or coach texting. Reference their routine or favorite class if known. ` +
+      `${hasLoyalty ? "Mention a member benefit or class perk. " : ""}` +
+      `NEVER say "we miss you." Make them feel excited to come back, not guilty for leaving.`;
   } else if (ind === "healthcare") {
-    industryGuidance = `This is a healthcare provider. Use a professional tone. Reference their last interaction and suggest a follow-up appointment.`;
+    const typeNote = items ? `Last interaction: ${items}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days since last visit.` : "";
+    industryGuidance =
+      `This is a healthcare provider (medical, dental, therapy, etc.). ${daysNote} ${typeNote} ` +
+      `Professional and warm tone. Suggest a follow-up appointment or check-in naturally. ` +
+      `Keep it brief and non-clinical. Sound like the office reaching out personally.`;
   } else if (ind === "legal") {
-    industryGuidance = `This is a legal practice. Use a professional tone. Reference their last interaction and suggest a follow-up.`;
+    const typeNote = items ? `Last matter type: ${items}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days since last interaction.` : "";
+    industryGuidance =
+      `This is a legal practice. ${daysNote} ${typeNote} ` +
+      `Professional, warm, and concise. Reference their last interaction type. ` +
+      `Suggest a check-in or follow-up. Sound like the attorney or paralegal reaching out personally.`;
   } else if (ind === "real estate") {
-    industryGuidance = `This is a real estate business. Use a professional tone. Reference their last interaction and suggest a check-in.`;
+    const typeNote = items ? `Last interaction: ${items}.` : "";
+    const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days since last contact.` : "";
+    industryGuidance =
+      `This is a real estate business. ${daysNote} ${typeNote} ` +
+      `Professional, personable, brief. Market context: it's ${season}. ` +
+      `Reference their last interaction and suggest a natural check-in or market update. ` +
+      `Sound like the agent reaching out to a valued client personally.`;
   } else {
-    industryGuidance = `Personalize this re-engagement message based on their purchase history. ${visitNote}`;
+    const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days since last visit.` : "";
+    industryGuidance =
+      `${daysNote} Personalize this re-engagement message based on their purchase history. ` +
+      `Total spend: ${formatCurrency(totalSpendAmount)}. ` +
+      (items ? `Their interests/purchases: ${items}. ` : "") +
+      `Make it feel personal, not like a mass text.`;
   }
 
-  const spendContext = totalSpendAmount > 0
-    ? `Customer lifetime spend: ${formatCurrency(totalSpendAmount)}. Average transaction: ${formatCurrency(avgSpendAmount)}.`
-    : "";
+  const spendContext =
+    totalSpendAmount > 0
+      ? `Customer lifetime spend: ${formatCurrency(totalSpendAmount)}. Avg transaction: ${formatCurrency(avgSpendAmount)}.`
+      : "";
 
   const customNote = customInstructions
-    ? `\n\nAdditional business instructions: ${customInstructions}`
+    ? `\n\nAdditional business rules (always follow these): ${customInstructions}`
     : "";
 
   return (
-    `You are an expert SMS copywriter. Write ONE personalized SMS message under 160 characters total. ` +
-    `Voice/tone: ${voice}. Always address the customer by first name only (${firstName}). ` +
-    `Never sound like a template or mass text. No markdown, no placeholders. Return only the message body.\n\n` +
+    `You are an expert SMS copywriter for local businesses. Write ONE personalized SMS under 160 characters. ` +
+    `Voice/tone: ${voice}. Address customer by first name only (${firstName}). ` +
+    `Never sound like a template, mass text, or marketing email. No markdown, no placeholders, no emojis unless they feel natural. ` +
+    `Return ONLY the message body — nothing else.\n\n` +
     `${industryGuidance} ${spendContext}${customNote}`
   );
 }
@@ -184,25 +283,20 @@ export async function POST(request: NextRequest) {
     daysSinceLastVisit,
     customer.last_purchase,
     avgSpendAmount,
-    totalSpendAmount
+    totalSpendAmount,
+    history
   );
 
   const userContent = [
-    `Business: ${business.name}`,
+    `Business: ${business.name} (${business.industry ?? "small business"})`,
     `Customer first name: ${firstName}`,
-    `Goals for this message: ${goals || "re-engage the customer"}`,
-    daysSinceLastVisit !== null
-      ? `Days since last visit: ${daysSinceLastVisit}`
-      : null,
+    `Goals: ${goals || "re-engage the customer"}`,
+    daysSinceLastVisit !== null ? `Days since last visit: ${daysSinceLastVisit}` : null,
     customer.last_purchase ? `Last purchase date: ${customer.last_purchase}` : null,
-    totalSpendAmount > 0
-      ? `Total lifetime spend: ${formatCurrency(totalSpendAmount)}`
-      : null,
-    customer.next_contact_date
-      ? `Next contact date: ${customer.next_contact_date}`
-      : null,
+    totalSpendAmount > 0 ? `Total lifetime spend: ${formatCurrency(totalSpendAmount)}` : null,
+    history.length > 0 ? `Visit count: ${history.length}` : null,
     "",
-    "Write the SMS message now. Under 160 characters. First name only. Not a template.",
+    "Write the SMS message now. Under 160 characters. First name only. Must feel personal and specific.",
   ]
     .filter(Boolean)
     .join("\n");

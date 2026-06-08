@@ -4,6 +4,16 @@ import { cn } from "@/utils/helpers";
 import { DATA_SOURCES, type DataSource } from "../types";
 import type { StepProps } from "../Wizard";
 
+const SOURCE_IMPORT_DESCRIPTION: Record<DataSource, string> = {
+  square: "Names, phones, emails, order history, and spend amounts.",
+  stripe: "Paying customers, payment history, and lifetime value.",
+  shopify: "Store customers, orders, and purchase totals.",
+  toast: "Guests, visit frequency, and spend from your POS.",
+  hubspot: "CRM contacts, deal history, and engagement data.",
+  csv: "Any customer list you already have as a spreadsheet.",
+  manual: "Build your list from scratch one customer at a time.",
+};
+
 function DataSourceIcon({ id }: { id: DataSource }) {
   const cls = "h-5 w-5";
   switch (id) {
@@ -72,13 +82,20 @@ export function StepDataSource({ state, update }: StepProps) {
               type="button"
               onClick={() => update({ dataSource: source.id, connected: false })}
               className={cn(
-                "group flex flex-col items-start rounded-card border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base",
+                "group relative flex flex-col items-start rounded-card border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base",
                 selected
                   ? "border-accent bg-accent/5"
                   : "border-line bg-base hover:border-content-muted"
               )}
               aria-pressed={selected}
             >
+              {selected && (
+                <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent">
+                  <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
+              )}
               <div
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-btn transition-colors",
@@ -95,6 +112,11 @@ export function StepDataSource({ state, update }: StepProps) {
               <span className="mt-0.5 text-xs leading-relaxed text-content-muted">
                 {source.description}
               </span>
+              {selected && (
+                <p className="mt-2 text-xs text-accent/80 leading-snug">
+                  Imports: {SOURCE_IMPORT_DESCRIPTION[source.id]}
+                </p>
+              )}
             </button>
           );
         })}
