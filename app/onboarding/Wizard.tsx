@@ -39,9 +39,17 @@ function canAdvance(step: number, state: WizardState): boolean {
   }
 }
 
-export function Wizard() {
-  const [step, setStep] = useState(1);
-  const [state, setState] = useState<WizardState>(initialWizardState);
+interface WizardProps {
+  initialStep?: number;
+  initialState?: Partial<WizardState>;
+}
+
+export function Wizard({ initialStep = 1, initialState }: WizardProps) {
+  const [step, setStep] = useState(initialStep);
+  const [state, setState] = useState<WizardState>(() => ({
+    ...initialWizardState(),
+    ...initialState,
+  }));
 
   function update(partial: Partial<WizardState>) {
     setState((prev) => ({ ...prev, ...partial }));

@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Wizard } from "./Wizard";
+import type { WizardState } from "./types";
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [checking, setChecking] = useState(true);
+  const [initialStep, setInitialStep] = useState(1);
+  const [initialState, setInitialState] = useState<Partial<WizardState>>({});
 
   useEffect(() => {
     let active = true;
@@ -36,6 +40,36 @@ export default function OnboardingPage() {
           router.replace("/dashboard");
           return;
         }
+
+        // Handle return from OAuth — restore wizard state and sync customers
+        const oauthConnected = searchParams.get("oauth_connected");
+        if (oauthConnected) {
+          try {
+            const res = await fetch("/api/oauth/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ provider: oauthConnected }),
+            });
+            const data = await res.json() as { customers?: unknown[]; tokenValid?: boolean };
+            if (active) {
+              setInitialState({
+                dataSource: oauthConnected as WizardState["dataSource"],
+                connected: true,
+                customers: (data.customers ?? []) as WizardState["customers"],
+              });
+              setInitialStep(3); // advance past connect step
+            }
+          } catch {
+            // If sync fails, still advance wizard with connected: true
+            if (active) {
+              setInitialState({
+                dataSource: oauthConnected as WizardState["dataSource"],
+                connected: true,
+              });
+              setInitialStep(3);
+            }
+          }
+        }
       } catch {
         // fall through to wizard
       }
@@ -52,7 +86,7 @@ export default function OnboardingPage() {
       active = false;
       clearTimeout(timeout);
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   if (checking) {
     return (
@@ -74,7 +108,7 @@ export default function OnboardingPage() {
           </span>
         </div>
       </div>
-      <Wizard />
+      <Wizard initialStep={initialStep} initialState={initialState} />
     </main>
   );
 }
