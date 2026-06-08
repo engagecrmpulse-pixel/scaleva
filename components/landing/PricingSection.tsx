@@ -352,7 +352,7 @@ export default function PricingSection() {
             </p>
           </div>
           <a
-            href="mailto:hello@scaleva.com?subject=Enterprise"
+            href="mailto:engagecrmpulse@gmail.com?subject=Enterprise"
             style={{
               display: "inline-flex",
               alignItems: "center",

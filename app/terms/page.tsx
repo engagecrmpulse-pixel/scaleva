@@ -113,7 +113,7 @@ export default function TermsPage() {
             <h2 className="mb-3 font-heading text-base font-semibold text-content">Contact</h2>
             <p>
               Questions about these Terms? Email us at{" "}
-              <a href="mailto:legal@scaleva.app" className="text-accent hover:underline">legal@scaleva.app</a>.
+              <a href="mailto:engagecrmpulse@gmail.com" className="text-accent hover:underline">legal@scaleva.app</a>.
             </p>
           </section>
 

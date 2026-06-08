@@ -102,6 +102,30 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [annual, setAnnual] = useState(false);
+  const [showBypass, setShowBypass] = useState(false);
+  const [bypassCode, setBypassCode] = useState("");
+  const [bypassPlan, setBypassPlan] = useState("pro");
+  const [bypassLoading, setBypassLoading] = useState(false);
+  const [bypassError, setBypassError] = useState<string | null>(null);
+  const [bypassSuccess, setBypassSuccess] = useState(false);
+
+  async function applyBypass() {
+    setBypassLoading(true);
+    setBypassError(null);
+    const res = await fetch("/api/stripe/bypass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: bypassCode, plan: bypassPlan }),
+    });
+    const data = (await res.json()) as { ok?: boolean; plan?: string; error?: string };
+    setBypassLoading(false);
+    if (!res.ok || !data.ok) {
+      setBypassError(data.error ?? "Invalid code");
+      return;
+    }
+    setBypassSuccess(true);
+    setTimeout(() => { window.location.href = "/dashboard"; }, 1200);
+  }
 
   async function subscribe(planId: string) {
     setLoading(planId);
@@ -244,6 +268,65 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
           })}
         </div>
 
+        {/* Owner access bypass */}
+        <div className="mb-8 text-center">
+          {!showBypass ? (
+            <button
+              type="button"
+              onClick={() => setShowBypass(true)}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Have an access code?
+            </button>
+          ) : bypassSuccess ? (
+            <p className="text-sm font-semibold text-green-600">
+              Access granted — redirecting to dashboard…
+            </p>
+          ) : (
+            <div className="mx-auto max-w-sm rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 text-left">
+              <p className="mb-3 text-sm font-semibold text-gray-900">Enter access code</p>
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={bypassCode}
+                  onChange={(e) => setBypassCode(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") void applyBypass(); }}
+                  placeholder="Code"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  autoFocus
+                />
+                <select
+                  value={bypassPlan}
+                  onChange={(e) => setBypassPlan(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="starter">Starter plan</option>
+                  <option value="growth">Growth plan</option>
+                  <option value="pro">Pro plan</option>
+                </select>
+                {bypassError && <p className="text-xs text-red-500">{bypassError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowBypass(false); setBypassCode(""); setBypassError(null); }}
+                    className="flex-1 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-500 hover:border-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void applyBypass()}
+                    disabled={!bypassCode.trim() || bypassLoading}
+                    className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {bypassLoading ? "Applying…" : "Apply"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Enterprise */}
         <div className={`mb-16 rounded-2xl p-7 md:flex md:items-center md:justify-between ${isCurrent("enterprise") ? "bg-white ring-2 ring-green-400" : "bg-white ring-1 ring-gray-200 shadow-sm"}`}>
           {isCurrent("enterprise") && (
@@ -272,7 +355,7 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
               </Link>
             ) : (
               <a
-                href="mailto:hello@scaleva.com?subject=Enterprise%20Plan%20Inquiry"
+                href="mailto:engagecrmpulse@gmail.com?subject=Enterprise%20Plan%20Inquiry"
                 className="mt-2 flex h-11 items-center justify-center rounded-xl bg-gray-900 px-6 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
               >
                 Contact us

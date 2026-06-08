@@ -72,7 +72,7 @@ export default function PrivacyPage() {
               We retain your data for as long as your account is active. If you cancel your account,
               all data (businesses, customers, messages) will be permanently deleted within 30 days.
               You can request immediate deletion at any time by using the Danger Zone in Settings or
-              emailing us at <a href="mailto:privacy@scaleva.app" className="text-accent hover:underline">privacy@scaleva.app</a>.
+              emailing us at <a href="mailto:engagecrmpulse@gmail.com" className="text-accent hover:underline">privacy@scaleva.app</a>.
             </p>
           </section>
 
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
               Scaleva is operated from the United States. Data is processed in the US. If you are
               subject to GDPR (e.g., EU residents), by using Scaleva you consent to the transfer
               and processing of your data in the United States. Contact us at{" "}
-              <a href="mailto:privacy@scaleva.app" className="text-accent hover:underline">privacy@scaleva.app</a>{" "}
+              <a href="mailto:engagecrmpulse@gmail.com" className="text-accent hover:underline">privacy@scaleva.app</a>{" "}
               for data subject requests.
             </p>
           </section>
@@ -102,7 +102,7 @@ export default function PrivacyPage() {
             <h2 className="mb-3 font-heading text-base font-semibold text-content">Contact</h2>
             <p>
               For any privacy questions or requests, email us at{" "}
-              <a href="mailto:privacy@scaleva.app" className="text-accent hover:underline">privacy@scaleva.app</a>.
+              <a href="mailto:engagecrmpulse@gmail.com" className="text-accent hover:underline">privacy@scaleva.app</a>.
             </p>
           </section>
 
