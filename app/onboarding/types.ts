@@ -22,6 +22,24 @@ export type DataSource =
   | "csv"
   | "manual";
 
+export interface MenuItemDraft {
+  name: string;
+  category: string;
+  price: string;
+  description: string;
+}
+
+export interface FaqDraft {
+  question: string;
+  answer: string;
+}
+
+export interface HoursDraft {
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
 export interface WizardState {
   dataSource: DataSource | null;
   /** OAuth placeholder result for the connect step. */
@@ -35,11 +53,21 @@ export interface WizardState {
   cadence: string;
   customInstructions: string;
 
+  // Business profile — industry-specific deep-dive (step 4)
+  menuItems: MenuItemDraft[];
+  businessHours: Record<string, HoursDraft>;
+  businessPhone: string;
+  businessAddress: string;
+  specialOffer: string;
+  bookingLink: string;
+  loyaltyProgram: string;
+  faq: FaqDraft[];
+
   /** Message produced in the preview step (may be hand-edited). */
   previewMessage: string;
 }
 
-export const TOTAL_STEPS = 5;
+export const TOTAL_STEPS = 6;
 
 export interface DataSourceOption {
   id: DataSource;
@@ -134,6 +162,16 @@ export const CADENCES = [
   "Monthly",
 ];
 
+const DEFAULT_HOURS: Record<string, HoursDraft> = {
+  Monday: { open: "9:00 AM", close: "5:00 PM", closed: false },
+  Tuesday: { open: "9:00 AM", close: "5:00 PM", closed: false },
+  Wednesday: { open: "9:00 AM", close: "5:00 PM", closed: false },
+  Thursday: { open: "9:00 AM", close: "5:00 PM", closed: false },
+  Friday: { open: "9:00 AM", close: "5:00 PM", closed: false },
+  Saturday: { open: "10:00 AM", close: "3:00 PM", closed: false },
+  Sunday: { open: "", close: "", closed: true },
+};
+
 export function initialWizardState(): WizardState {
   return {
     dataSource: null,
@@ -145,6 +183,14 @@ export function initialWizardState(): WizardState {
     goals: [],
     cadence: CADENCES[2], // Weekly
     customInstructions: "",
+    menuItems: [],
+    businessHours: DEFAULT_HOURS,
+    businessPhone: "",
+    businessAddress: "",
+    specialOffer: "",
+    bookingLink: "",
+    loyaltyProgram: "",
+    faq: [{ question: "", answer: "" }],
     previewMessage: "",
   };
 }

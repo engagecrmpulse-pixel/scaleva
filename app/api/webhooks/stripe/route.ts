@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/utils/database.types";
+import { getResend, fromEmail } from "@/lib/resend";
 
 const STRIPE_API_VERSION = "2026-05-27.dahlia" as const;
 
@@ -49,6 +50,19 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getServiceClient();
+
+  // ── Idempotency check ─────────────────────────────────────────────────────
+  const { data: alreadyProcessed } = await supabase
+    .from("processed_webhooks")
+    .select("id")
+    .eq("event_id", event.id)
+    .maybeSingle();
+
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true });
+  }
+
+  await supabase.from("processed_webhooks").insert({ event_id: event.id }).throwOnError();
 
   try {
     // ── New subscription from checkout ────────────────────────────────────────
@@ -150,23 +164,61 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Payment failed — mark subscription past_due ───────────────────────────
+    // ── Payment failed — mark past_due and send dunning email ─────────────────
     else if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const stripeSubId = (invoice as any).subscription as string | null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const amountDue = ((invoice as any).amount_due as number ?? 0) / 100;
+
       if (stripeSubId) {
         await supabase
           .from("subscriptions")
           .update({ status: "past_due", updated_at: new Date().toISOString() })
           .eq("stripe_subscription_id", stripeSubId);
+
+        // Dunning email
+        const { data: subRow } = await supabase
+          .from("subscriptions")
+          .select("business_id")
+          .eq("stripe_subscription_id", stripeSubId)
+          .maybeSingle();
+
+        if (subRow?.business_id) {
+          const { data: business } = await supabase
+            .from("businesses")
+            .select("owner_id, name")
+            .eq("id", subRow.business_id)
+            .maybeSingle();
+
+          if (business) {
+            const { data: authUser } = await supabase.auth.admin.getUserById(business.owner_id);
+            const ownerEmail = authUser?.user?.email;
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://scaleva.vercel.app";
+
+            if (ownerEmail) {
+              const resend = getResend();
+              await resend?.emails.send({
+                from: fromEmail(),
+                to: ownerEmail,
+                subject: "Action required: Your Scaleva payment failed",
+                text: [
+                  `Your payment of $${amountDue.toFixed(2)} for ${business.name} failed.`,
+                  "",
+                  "Please update your billing information to keep your account active.",
+                  "",
+                  `Manage billing: ${appUrl}/settings`,
+                ].join("\n"),
+              }).catch(() => null);
+            }
+          }
+        }
       }
     }
   } catch (err) {
     console.error("Stripe webhook handler error:", err);
-    // Still return 200 so Stripe doesn't retry for our own processing errors.
   }
 
-  // Always return 200 so Stripe stops retrying events we don't handle.
   return NextResponse.json({ received: true });
 }

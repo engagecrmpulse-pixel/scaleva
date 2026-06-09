@@ -46,6 +46,39 @@ export default function TermsPage() {
           </section>
 
           <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">TCPA compliance</h2>
+            <p>
+              <strong className="text-content">You are solely responsible for obtaining proper written consent
+              from customers before sending SMS messages.</strong> Scaleva provides tools to help record and
+              enforce consent, but is not liable for any TCPA violations resulting from your messaging
+              practices. Fines under the TCPA can reach $1,500 per message — ensure you have consent before
+              adding any customer.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">Opt-out compliance</h2>
+            <p>
+              You must honor all STOP requests immediately. Scaleva handles opt-out processing automatically —
+              customers who reply STOP are immediately marked as opted-out and will receive no further
+              messages. You must not attempt to circumvent this mechanism or re-add opted-out customers
+              without their renewed explicit consent.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">Prohibited content</h2>
+            <p>You may not use Scaleva to send:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>Spam or unsolicited messages</li>
+              <li>Illegal content of any kind</li>
+              <li>Deceptive, misleading, or fraudulent messages</li>
+              <li>Adult content or material inappropriate for general audiences</li>
+              <li>Phishing attempts or messages impersonating other entities</li>
+            </ul>
+          </section>
+
+          <section>
             <h2 className="mb-3 font-heading text-base font-semibold text-content">SMS compliance</h2>
             <p>
               <strong className="text-content">Businesses are solely responsible for TCPA compliance

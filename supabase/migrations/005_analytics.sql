@@ -9,3 +9,7 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   return_visits integer default 0,
   unique(business_id, date)
 );
+
+CREATE INDEX IF NOT EXISTS idx_messages_business_sent ON messages(business_id, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_customers_business_contact ON customers(business_id, next_contact_date);
+CREATE INDEX IF NOT EXISTS idx_daily_stats_business_date ON daily_stats(business_id, date DESC);

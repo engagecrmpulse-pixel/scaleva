@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Business, BusinessConfig, Subscription } from "@/utils/database.types";
@@ -52,6 +52,45 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   const [emailReply, setEmailReply] = useState(config.emailNotifyReply !== false);
   const [emailFailed, setEmailFailed] = useState(config.emailNotifyFailed !== false);
   const [emailSummary, setEmailSummary] = useState(config.emailNotifyDailySummary !== false);
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(config.autoReplyEnabled === true);
+  const [reviewRequestEnabled, setReviewRequestEnabled] = useState(config.reviewRequestEnabled === true);
+  const [reviewLink, setReviewLink] = useState((config.reviewLink as string) ?? "");
+  const [sequenceEnabled, setSequenceEnabled] = useState(config.sequenceEnabled === true);
+
+  // Track initial saved values to detect unsaved changes
+  const [savedState, setSavedState] = useState({
+    name, industry, voice, goals, cadence, sendDay, sendTime, timezone,
+    customInstructions, emailReply, emailFailed, emailSummary,
+    autoReplyEnabled, reviewRequestEnabled, reviewLink, sequenceEnabled,
+  });
+
+  const isDirty =
+    name !== savedState.name || industry !== savedState.industry ||
+    voice !== savedState.voice || goals !== savedState.goals ||
+    cadence !== savedState.cadence || sendDay !== savedState.sendDay ||
+    sendTime !== savedState.sendTime || timezone !== savedState.timezone ||
+    customInstructions !== savedState.customInstructions ||
+    emailReply !== savedState.emailReply || emailFailed !== savedState.emailFailed ||
+    emailSummary !== savedState.emailSummary ||
+    autoReplyEnabled !== savedState.autoReplyEnabled ||
+    reviewRequestEnabled !== savedState.reviewRequestEnabled ||
+    reviewLink !== savedState.reviewLink ||
+    sequenceEnabled !== savedState.sequenceEnabled;
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  function confirmNavAway(): boolean {
+    if (!isDirty) return true;
+    return window.confirm("You have unsaved changes. Leave anyway?");
+  }
 
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -61,6 +100,8 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   const [scheduleSaved, setScheduleSaved] = useState(false);
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifSaved, setNotifSaved] = useState(false);
+  const [featuresSaving, setFeaturesSaving] = useState(false);
+  const [featuresSaved, setFeaturesSaved] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteText, setDeleteText] = useState("");
@@ -88,6 +129,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
     });
     setProfileSaving(false);
     setProfileSaved(true);
+    setSavedState((prev) => ({ ...prev, name, industry, voice, goals }));
     setTimeout(() => setProfileSaved(false), 2000);
   }
 
@@ -101,6 +143,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
     });
     setAiSaving(false);
     setAiSaved(true);
+    setSavedState((prev) => ({ ...prev, customInstructions }));
     setTimeout(() => setAiSaved(false), 2000);
   }
 
@@ -116,6 +159,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
     });
     setScheduleSaving(false);
     setScheduleSaved(true);
+    setSavedState((prev) => ({ ...prev, cadence, sendDay, sendTime, timezone }));
     setTimeout(() => setScheduleSaved(false), 2000);
   }
 
@@ -131,7 +175,29 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
     });
     setNotifSaving(false);
     setNotifSaved(true);
+    setSavedState((prev) => ({ ...prev, emailReply, emailFailed, emailSummary }));
     setTimeout(() => setNotifSaved(false), 2000);
+  }
+
+  async function saveFeatures() {
+    setFeaturesSaving(true);
+    setFeaturesSaved(false);
+    await fetch("/api/settings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        config: {
+          autoReplyEnabled,
+          reviewRequestEnabled,
+          reviewLink: reviewLink.trim() || undefined,
+          sequenceEnabled,
+        },
+      }),
+    });
+    setFeaturesSaving(false);
+    setFeaturesSaved(true);
+    setSavedState((prev) => ({ ...prev, autoReplyEnabled, reviewRequestEnabled, reviewLink, sequenceEnabled }));
+    setTimeout(() => setFeaturesSaved(false), 2000);
   }
 
   async function openBillingPortal() {
@@ -168,12 +234,16 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
     <div className="min-h-screen bg-base">
       {/* Topbar */}
       <div className="flex h-14 items-center border-b border-line bg-surface px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 text-sm text-content-muted hover:text-content">
+        <button
+          type="button"
+          onClick={() => { if (confirmNavAway()) router.push("/dashboard"); }}
+          className="flex items-center gap-2 text-sm text-content-muted hover:text-content"
+        >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
-          Dashboard
-        </Link>
+          Dashboard{isDirty && <span className="ml-1 h-1.5 w-1.5 rounded-full bg-yellow-400" title="Unsaved changes" />}
+        </button>
         <span className="mx-3 text-line">|</span>
         <span className="text-sm font-medium text-content">Settings</span>
         <span className="ml-auto text-xs text-content-muted">{userEmail}</span>
@@ -277,6 +347,103 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             className="mt-3 h-9 rounded-btn bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
           >
             {aiSaving ? "Saving…" : aiSaved ? "Saved!" : "Save instructions"}
+          </button>
+        </div>
+
+        {/* AI Features */}
+        <div className={sectionClass}>
+          <h2 className={sectionHeaderClass}>AI features</h2>
+          <div className="space-y-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-content">Autonomous AI replies</p>
+                <p className="mt-0.5 text-xs text-content-muted">
+                  When a customer replies, Claude reads the conversation and sends a response automatically — no action needed from you. You can still jump in anytime.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={autoReplyEnabled}
+                onClick={() => setAutoReplyEnabled(!autoReplyEnabled)}
+                className="relative mt-0.5 inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                style={{ backgroundColor: autoReplyEnabled ? "#3B82F6" : "#2A2D35" }}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                    autoReplyEnabled ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-content">Win-back sequences</p>
+                <p className="mt-0.5 text-xs text-content-muted">
+                  After you message a customer, Scaleva automatically follows up at 7, 21, and 45 days if they haven't returned. Each message is AI-generated with a different angle.
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sequenceEnabled}
+                onClick={() => setSequenceEnabled(!sequenceEnabled)}
+                className="relative mt-0.5 inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                style={{ backgroundColor: sequenceEnabled ? "#3B82F6" : "#2A2D35" }}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                    sequenceEnabled ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div>
+              <div className="mb-3 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-content">Google review requests</p>
+                  <p className="mt-0.5 text-xs text-content-muted">
+                    Automatically ask customers for a Google review when they return — at most once every 60 days per customer.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={reviewRequestEnabled}
+                  onClick={() => setReviewRequestEnabled(!reviewRequestEnabled)}
+                  className="relative mt-0.5 inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none"
+                  style={{ backgroundColor: reviewRequestEnabled ? "#3B82F6" : "#2A2D35" }}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                      reviewRequestEnabled ? "translate-x-4" : "translate-x-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              {reviewRequestEnabled && (
+                <div>
+                  <label className={labelClass}>Your Google review link</label>
+                  <input
+                    className={inputClass}
+                    value={reviewLink}
+                    onChange={(e) => setReviewLink(e.target.value)}
+                    placeholder="https://g.page/r/your-business/review"
+                    type="url"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={saveFeatures}
+            disabled={featuresSaving}
+            className="mt-4 h-9 rounded-btn bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
+          >
+            {featuresSaving ? "Saving…" : featuresSaved ? "Saved!" : "Save AI features"}
           </button>
         </div>
 

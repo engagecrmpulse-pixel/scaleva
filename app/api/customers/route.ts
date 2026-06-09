@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizePhone, sanitizeText, sanitizeEmail } from "@/lib/sanitize";
 import type { SpendHistoryEntry } from "@/utils/database.types";
 
 export async function POST(request: NextRequest) {
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
     email?: string;
     last_purchase?: string;
     spend_amount?: number;
+    consent_given?: boolean;
+    force?: boolean; // allow update even if duplicate
   };
   try {
     body = await request.json();
@@ -63,6 +66,39 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // ── Sanitize inputs ───────────────────────────────────────────────────────
+  const cleanName = sanitizeText(body.name.trim()).slice(0, 100);
+  const cleanPhone = body.phone ? sanitizePhone(body.phone) : null;
+  const cleanEmail = body.email ? sanitizeEmail(body.email) : null;
+
+  // ── Duplicate phone check ─────────────────────────────────────────────────
+  if (cleanPhone && !body.force) {
+    const digits = cleanPhone.replace(/\D/g, "");
+    const { data: existingCustomers } = await supabase
+      .from("customers")
+      .select("id, name, phone")
+      .eq("business_id", businessId)
+      .not("phone", "is", null);
+
+    const duplicate = existingCustomers?.find((c) => {
+      if (!c.phone) return false;
+      const existingDigits = c.phone.replace(/\D/g, "");
+      return existingDigits === digits || existingDigits === digits.replace(/^1/, "");
+    });
+
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: `A customer with this phone number already exists: ${duplicate.name}. Do you want to update their record instead?`,
+          code: "DUPLICATE_PHONE",
+          existingCustomerId: duplicate.id,
+          existingCustomerName: duplicate.name,
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const spendAmount = body.spend_amount ?? 0;
   const spendHistory: SpendHistoryEntry[] =
     spendAmount > 0
@@ -73,11 +109,14 @@ export async function POST(request: NextRequest) {
     .from("customers")
     .insert({
       business_id: businessId,
-      name: body.name.trim(),
-      phone: body.phone?.trim() || null,
-      email: body.email?.trim() || null,
+      name: cleanName,
+      phone: cleanPhone,
+      email: cleanEmail,
       last_purchase: body.last_purchase || null,
       spend_history: spendHistory,
+      consent_given: body.consent_given ?? false,
+      consent_date: body.consent_given ? new Date().toISOString() : null,
+      ltv: spendAmount,
     })
     .select()
     .single();

@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  BarChart, Bar, LineChart, Line,
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +15,8 @@ import type {
   Customer,
   Message,
   MessageStatus,
+  MenuItem,
+  MenuItemMention,
   Notification,
   Subscription,
 } from "@/utils/database.types";
@@ -42,16 +44,20 @@ interface DashboardClientProps {
   initialCustomers: Customer[];
   initialMessages: Message[];
   initialNotifications: Notification[];
+  initialMenuItems: MenuItem[];
+  initialMenuMentions: MenuItemMention[];
   subscription: Subscription | null;
   isPastDue: boolean;
 }
 
 const statusTone: Record<MessageStatus, "gray" | "green" | "yellow" | "red" | "brand"> = {
   queued: "yellow",
+  queued_quiet_hours: "yellow",
   sent: "green",
   delivered: "green",
   failed: "red",
   received: "brand",
+  test_sent: "gray",
 };
 
 interface CustomerDraft {
@@ -70,6 +76,49 @@ function daysSinceDate(dateStr: string | null): number | null {
   if (Number.isNaN(d.getTime())) return null;
   return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
+
+function visitFrequencyDays(history: { date: string }[]): number | null {
+  if (history.length < 2) return null;
+  const sorted = history.map((h) => new Date(h.date).getTime()).sort((a, b) => a - b);
+  const spanDays = (sorted[sorted.length - 1] - sorted[0]) / 86400000;
+  if (spanDays === 0) return null;
+  return Math.round(spanDays / (history.length - 1));
+}
+
+type CustomerSegment = "champion" | "at_risk" | "new" | "almost_lapsed";
+
+function computeSegment(customer: Customer, allCustomers: Customer[]): CustomerSegment | null {
+  const daysSince = daysSinceDate(customer.last_purchase);
+  const visits = customer.return_visit_count ?? 0;
+  const history = customer.spend_history ?? [];
+
+  // Champion: 3+ return visits AND top-20% LTV
+  const sorted = allCustomers.map((c) => c.ltv ?? 0).sort((a, b) => b - a);
+  const topIdx = Math.max(0, Math.floor(sorted.length * 0.2) - 1);
+  const topLtv = sorted[topIdx] ?? 0;
+  if (visits >= 3 && (customer.ltv ?? 0) >= topLtv && topLtv > 0) return "champion";
+
+  // New: ≤1 purchase and last purchase within 30 days (or no purchase yet)
+  if (history.length <= 1 && (daysSince === null || daysSince <= 30)) return "new";
+
+  // At-risk / almost-lapsed: based on visit frequency vs elapsed days
+  const freqDays = visitFrequencyDays(history);
+  if (daysSince !== null) {
+    const threshold = freqDays ?? 30;
+    if (daysSince > threshold * 1.5) return "at_risk";
+    if (daysSince > threshold) return "almost_lapsed";
+  }
+
+  return null;
+}
+
+const SEGMENT_LABELS: Record<CustomerSegment | "all", string> = {
+  all: "All",
+  champion: "Champions",
+  new: "New",
+  almost_lapsed: "At Risk",
+  at_risk: "Lapsed",
+};
 
 function DaysBadge({ days }: { days: number | null }) {
   if (days === null) return <span className="text-xs text-content-muted">—</span>;
@@ -180,6 +229,80 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function RecoveryHero({
+  allTimeRevenue,
+  allTimeCustomers,
+  thisMonthRevenue,
+  thisMonthCustomers,
+  atRiskCount,
+  autopilot,
+}: {
+  allTimeRevenue: number;
+  allTimeCustomers: number;
+  thisMonthRevenue: number;
+  thisMonthCustomers: number;
+  atRiskCount: number;
+  autopilot: boolean;
+}) {
+  const hasProof = allTimeRevenue > 0 || allTimeCustomers > 0;
+  if (!hasProof && atRiskCount === 0) return null;
+
+  return (
+    <div className="mb-8 overflow-hidden rounded-card border border-accent/20 bg-gradient-to-br from-accent/[0.07] via-transparent to-transparent">
+      <div className="px-6 py-6">
+        {hasProof ? (
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-accent/60">Revenue recovered by Scaleva</p>
+              <p className="mt-1.5 font-mono text-[44px] font-semibold leading-none tracking-tight text-content">
+                {formatCurrency(allTimeRevenue)}
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-content-muted">
+                <span>{allTimeCustomers} customer{allTimeCustomers !== 1 ? "s" : ""} won back</span>
+                {thisMonthRevenue > 0 && (
+                  <>
+                    <span className="opacity-30">·</span>
+                    <span className="font-medium text-green-400">+{formatCurrency(thisMonthRevenue)} this month</span>
+                    <span className="opacity-30">·</span>
+                    <span>{thisMonthCustomers} this month</span>
+                  </>
+                )}
+              </div>
+            </div>
+            {atRiskCount > 0 && (
+              <div className="flex-shrink-0 rounded-btn border border-yellow-500/20 bg-yellow-500/5 px-5 py-4 text-center">
+                <p className="font-mono text-3xl font-semibold text-yellow-400">{atRiskCount}</p>
+                <p className="mt-1 text-xs text-content-muted">customers at risk</p>
+                <p className="mt-0.5 text-[10px] text-content-muted/50">
+                  {autopilot ? "autopilot will reach them" : "enable autopilot to recover"}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-yellow-500/60">Scaleva detected</p>
+              <p className="mt-1.5 font-mono text-[44px] font-semibold leading-none tracking-tight text-content">
+                {atRiskCount} <span className="text-2xl font-normal text-content-muted">at risk</span>
+              </p>
+              <p className="mt-3 text-sm text-content-muted">
+                {autopilot
+                  ? "Scaleva is monitoring and will automatically re-engage these customers."
+                  : "Enable autopilot to start recovering these customers automatically."}
+              </p>
+            </div>
+            <div className="flex-shrink-0 rounded-btn border border-accent/15 bg-accent/5 px-5 py-4">
+              <p className="text-xs font-medium text-accent">When customers return after a message,</p>
+              <p className="mt-0.5 text-xs text-content-muted">recovered revenue appears here.</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function NotificationBell({ notifications, onMarkRead, onMarkAll }: {
   notifications: Notification[]; onMarkRead: (id: string) => void; onMarkAll: () => void;
 }) {
@@ -266,13 +389,16 @@ function downloadCsv(csv: string, filename: string) {
 export function DashboardClient({
   businessId, businessName, industry, voice, userEmail,
   initialAutopilot, config, initialCustomers, initialMessages,
-  initialNotifications, subscription, isPastDue,
+  initialNotifications, initialMenuItems, initialMenuMentions,
+  subscription, isPastDue,
 }: DashboardClientProps) {
   const [autopilot, setAutopilot] = useState(initialAutopilot);
   const [autopilotSaving, setAutopilotSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [menuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [menuMentions] = useState<MenuItemMention[]>(initialMenuMentions);
   const [rowState, setRowState] = useState<Record<string, { loading: boolean; error: string | null; returning?: boolean }>>({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -281,9 +407,16 @@ export function DashboardClient({
   const [draft, setDraft] = useState<CustomerDraft>(emptyDraft());
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
+  const [addDuplicateWarning, setAddDuplicateWarning] = useState<{ id: string; name: string } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [sortByDays, setSortByDays] = useState(false);
+  const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
+  const [bulkSending, setBulkSending] = useState(false);
+  const [messageSearch, setMessageSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "outbound" | "failed" | "queued" | "inbound">("all");
+  const [segmentFilter, setSegmentFilter] = useState<CustomerSegment | "all">("all");
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const sendDay = config.autopilotSendDay ?? "Monday";
   const sendTime = config.autopilotSendTime ?? "9 AM";
@@ -302,6 +435,24 @@ export function DashboardClient({
   const messagesSent = useMemo(() => messages.filter((m) => m.direction === "outbound").length, [messages]);
   const repliesReceived = useMemo(() => messages.filter((m) => m.direction === "inbound").length, [messages]);
   const revenueTracked = useMemo(() => customers.reduce((sum, c) => sum + totalSpend(c.spend_history), 0), [customers]);
+  const thisMonthStart = useMemo(() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  }, []);
+
+  const recoveryStats = useMemo(() => {
+    const attributed = messages.filter((m) => m.attributed);
+    const thisMonth = attributed.filter((m) => m.sent_at != null && m.sent_at >= thisMonthStart);
+    return {
+      allTimeRevenue: attributed.reduce((s, m) => s + (m.attributed_revenue ?? 0), 0),
+      allTimeCustomers: new Set(attributed.map((m) => m.customer_id)).size,
+      thisMonthRevenue: thisMonth.reduce((s, m) => s + (m.attributed_revenue ?? 0), 0),
+      thisMonthCustomers: new Set(thisMonth.map((m) => m.customer_id)).size,
+    };
+  }, [messages, thisMonthStart]);
+
   const returnedCount = useMemo(() => customers.filter((c) => (c.return_visit_count ?? 0) > 0).length, [customers]);
   const conversionRate = useMemo(() => {
     if (!messagesSent) return 0;
@@ -334,6 +485,19 @@ export function DashboardClient({
     return map;
   }, [messages]);
 
+  const segmentMap = useMemo(() => {
+    const map = new Map<string, CustomerSegment | null>();
+    for (const c of customers) {
+      map.set(c.id, computeSegment(c, customers));
+    }
+    return map;
+  }, [customers]);
+
+  const atRiskCount = useMemo(
+    () => customers.filter((c) => { const s = segmentMap.get(c.id); return s === "at_risk" || s === "almost_lapsed"; }).length,
+    [customers, segmentMap]
+  );
+
   const sortedCustomers = useMemo(() => {
     if (!sortByDays) return customers;
     return [...customers].sort((a, b) => {
@@ -344,6 +508,35 @@ export function DashboardClient({
       return db - da;
     });
   }, [customers, sortByDays]);
+
+  const displayedCustomers = useMemo(() => {
+    if (segmentFilter === "all") return sortedCustomers;
+    return sortedCustomers.filter((c) => segmentMap.get(c.id) === segmentFilter);
+  }, [sortedCustomers, segmentFilter, segmentMap]);
+
+  const customerNameMap = useMemo(
+    () => new Map(customers.map((c) => [c.id, c.name])),
+    [customers]
+  );
+
+  const filteredMessages = useMemo(() => {
+    let msgs = messages;
+    if (statusFilter !== "all") {
+      if (statusFilter === "inbound") msgs = msgs.filter((m) => m.direction === "inbound");
+      else if (statusFilter === "outbound") msgs = msgs.filter((m) => m.direction === "outbound");
+      else if (statusFilter === "failed") msgs = msgs.filter((m) => m.status === "failed");
+      else if (statusFilter === "queued") msgs = msgs.filter((m) => m.status === "queued" || m.status === "queued_quiet_hours");
+    }
+    if (messageSearch.trim()) {
+      const q = messageSearch.toLowerCase();
+      msgs = msgs.filter(
+        (m) =>
+          m.content.toLowerCase().includes(q) ||
+          (customerNameMap.get(m.customer_id) ?? "").toLowerCase().includes(q)
+      );
+    }
+    return msgs;
+  }, [messages, statusFilter, messageSearch, customerNameMap]);
 
   const messagesPerDay = useMemo(() => {
     const tempMap = new Map<string, { sent: number; replies: number }>();
@@ -367,6 +560,58 @@ export function DashboardClient({
       rate: val.sent > 0 ? Math.round((val.replies / val.sent) * 100) : 0,
     }));
   }, [messages]);
+
+  const revenueTimeline = useMemo(() => {
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { month: d.toLocaleString("default", { month: "short" }), recovered: 0 };
+    });
+    for (const m of messages) {
+      if (!m.attributed || !m.sent_at) continue;
+      const d = new Date(m.sent_at);
+      const diff = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+      if (diff >= 0 && diff < 6) months[5 - diff].recovered += m.attributed_revenue ?? 0;
+    }
+    return months;
+  }, [messages]);
+
+  const replyHeatmap = useMemo(() => {
+    const grid: number[][] = Array.from({ length: 7 }, () => new Array(24).fill(0));
+    for (const m of messages) {
+      if (m.direction !== "inbound" || !m.sent_at) continue;
+      const d = new Date(m.sent_at);
+      grid[d.getDay()][d.getHours()]++;
+    }
+    return grid;
+  }, [messages]);
+
+  const funnelData = useMemo(() => {
+    const messaged = new Set(messages.filter((m) => m.direction === "outbound").map((m) => m.customer_id));
+    const replied = new Set(messages.filter((m) => m.direction === "inbound").map((m) => m.customer_id));
+    const returned = customers.filter((c) => (c.return_visit_count ?? 0) > 0).length;
+    const attrSet = new Set(messages.filter((m) => m.attributed).map((m) => m.customer_id));
+    const total = Math.max(customers.length, 1);
+    return [
+      { label: "Total Customers", count: customers.length, pct: 100, color: "#6B7280" },
+      { label: "Messaged", count: messaged.size, pct: Math.round((messaged.size / total) * 100), color: "#3B82F6" },
+      { label: "Replied", count: replied.size, pct: Math.round((replied.size / total) * 100), color: "#8B5CF6" },
+      { label: "Returned", count: returned, pct: Math.round((returned / total) * 100), color: "#10B981" },
+      { label: "Revenue Attributed", count: attrSet.size, pct: Math.round((attrSet.size / total) * 100), color: "#F59E0B" },
+    ];
+  }, [customers, messages]);
+
+  const menuStats = useMemo(() => {
+    return menuItems.map((item) => {
+      const mentions = menuMentions.filter((m) => m.menu_item_id === item.id);
+      const positive = mentions.filter((m) => m.sentiment === "positive").length;
+      const negative = mentions.filter((m) => m.sentiment === "negative").length;
+      const neutral = mentions.filter((m) => m.sentiment === "neutral").length;
+      const total = mentions.length;
+      const score = total === 0 ? 0 : (positive - negative) / total;
+      return { ...item, positive, negative, neutral, total, score };
+    }).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  }, [menuItems, menuMentions]);
 
   const msgLimit = subscription?.plan === "enterprise" ? null : (PLAN_LIMITS[subscription?.plan ?? "starter"] ?? 2000);
   const custLimit = subscription?.plan === "enterprise" ? null : (subscription?.customer_limit ?? null);
@@ -393,9 +638,10 @@ export function DashboardClient({
   async function generateAndSend(customer: Customer) {
     setRowState((s) => ({ ...s, [customer.id]: { loading: true, error: null } }));
     try {
+      const segment = segmentMap.get(customer.id) ?? undefined;
       const genRes = await fetch("/api/messages/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customerId: customer.id }),
+        body: JSON.stringify({ customerId: customer.id, segment }),
       });
       const genData = (await genRes.json()) as { message?: string; error?: string };
       if (!genRes.ok || !genData.message) throw new Error(genData.error ?? "Failed to generate");
@@ -447,23 +693,44 @@ export function DashboardClient({
     });
   }
 
-  async function addCustomer() {
+  async function addCustomer(force = false) {
     if (!draft.name.trim()) { setAddError("Name is required."); return; }
-    setAddLoading(true); setAddError(null);
+    if (!consentChecked) { setAddError("You must confirm customer consent before adding."); return; }
+    setAddLoading(true); setAddError(null); setAddDuplicateWarning(null);
     const res = await fetch("/api/customers", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: draft.name.trim(), phone: draft.phone.trim() || undefined,
         email: draft.email.trim() || undefined, last_purchase: draft.last_purchase || undefined,
         spend_amount: Number.parseFloat(draft.spend_amount) || 0,
+        consent_given: consentChecked,
+        force,
       }),
     });
-    const data = (await res.json()) as { customer?: Customer; error?: string };
+    const data = (await res.json()) as { customer?: Customer; error?: string; code?: string; existingCustomerId?: string; existingCustomerName?: string };
     setAddLoading(false);
+    if (res.status === 409 && data.code === "DUPLICATE_PHONE") {
+      setAddDuplicateWarning({ id: data.existingCustomerId!, name: data.existingCustomerName! });
+      return;
+    }
     if (!res.ok || !data.customer) { setAddError(data.error ?? "Failed to add customer."); return; }
     setCustomers((prev) => [...prev, data.customer!]);
     setAddOpen(false);
+    setConsentChecked(false);
     addToast(`${draft.name} added!`, "success");
+  }
+
+  async function bulkGenerateAndSend() {
+    if (selectedCustomers.size === 0) return;
+    setBulkSending(true);
+    const ids = Array.from(selectedCustomers);
+    for (let i = 0; i < ids.length; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 500));
+      const customer = customers.find((c) => c.id === ids[i]);
+      if (customer) await generateAndSend(customer);
+    }
+    setSelectedCustomers(new Set());
+    setBulkSending(false);
   }
 
   const slideInputClass = "w-full rounded-btn border border-line bg-base px-3 py-2.5 text-sm text-content placeholder:text-content-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors";
@@ -478,7 +745,23 @@ export function DashboardClient({
           </p>
         </div>
       )}
-      <div className={`flex min-h-screen bg-base ${isPastDue ? "pt-9" : ""}`}>
+      {!isPastDue && msgLimit !== null && msgPct >= 80 && (
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-yellow-500/20 bg-yellow-500/10 px-4 py-2 text-center">
+          <p className="text-xs text-yellow-400">
+            You have used {Math.round(msgPct)}% of your monthly messages.{" "}
+            <a href="/pricing" className="font-semibold underline">Upgrade your plan to avoid interruptions →</a>
+          </p>
+        </div>
+      )}
+      {!isPastDue && custLimit !== null && custPct >= 80 && msgPct < 80 && (
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-yellow-500/20 bg-yellow-500/10 px-4 py-2 text-center">
+          <p className="text-xs text-yellow-400">
+            You have used {Math.round(custPct)}% of your customer limit.{" "}
+            <a href="/pricing" className="font-semibold underline">Upgrade your plan to avoid interruptions →</a>
+          </p>
+        </div>
+      )}
+      <div className={`flex min-h-screen bg-base ${isPastDue || msgPct >= 80 || custPct >= 80 ? "pt-9" : ""}`}>
         <Sidebar
           businessName={businessName} userEmail={userEmail} autopilot={autopilot}
           autopilotSaving={autopilotSaving} onToggleAutopilot={toggleAutopilot}
@@ -527,12 +810,22 @@ export function DashboardClient({
 
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl px-6 py-8">
-              {/* Stats — 8 cards */}
+              <RecoveryHero
+                allTimeRevenue={recoveryStats.allTimeRevenue}
+                allTimeCustomers={recoveryStats.allTimeCustomers}
+                thisMonthRevenue={recoveryStats.thisMonthRevenue}
+                thisMonthCustomers={recoveryStats.thisMonthCustomers}
+                atRiskCount={atRiskCount}
+                autopilot={autopilot}
+              />
+
+              {/* Stats */}
               <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard label="Total customers" value={String(customers.length)} />
                 <StatCard label="Messages sent" value={String(messagesSent)} />
                 <StatCard label="Replies received" value={String(repliesReceived)} />
                 <StatCard label="Revenue tracked" value={formatCurrency(revenueTracked)} />
+                <StatCard label="Revenue from messages" value={formatCurrency(recoveryStats.allTimeRevenue)} />
                 <StatCard label="Customers returned" value={String(returnedCount)} />
                 <StatCard label="Conversion rate" value={`${conversionRate}%`} />
                 <StatCard label="Reply rate" value={`${replyRate}%`} />
@@ -569,7 +862,7 @@ export function DashboardClient({
                           </>
                         )}
                       </div>
-                      <button type="button" onClick={() => { setDraft(emptyDraft()); setAddError(null); setAddOpen(true); }}
+                      <button type="button" onClick={() => { setDraft(emptyDraft()); setAddError(null); setAddDuplicateWarning(null); setConsentChecked(false); setAddOpen(true); }}
                         className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content">
                         <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -579,6 +872,47 @@ export function DashboardClient({
                     </div>
                   </div>
 
+                  {/* Segment filter tabs */}
+                  <div className="flex flex-wrap gap-1 border-b border-line px-6 py-2.5">
+                    {(["all", "champion", "new", "almost_lapsed", "at_risk"] as const).map((seg) => (
+                      <button
+                        key={seg}
+                        type="button"
+                        onClick={() => setSegmentFilter(seg)}
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                          segmentFilter === seg
+                            ? "bg-accent text-white"
+                            : "bg-line text-content-muted hover:text-content"
+                        }`}
+                      >
+                        {SEGMENT_LABELS[seg]}
+                        {seg !== "all" && (
+                          <span className="ml-1 opacity-60">
+                            {customers.filter((c) => segmentMap.get(c.id) === seg).length}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+
+                  {selectedCustomers.size > 0 && (
+                    <div className="flex items-center gap-3 border-b border-line bg-accent/5 px-6 py-2.5">
+                      <span className="text-xs text-content-muted">{selectedCustomers.size} selected</span>
+                      <button
+                        type="button"
+                        onClick={bulkGenerateAndSend}
+                        disabled={bulkSending}
+                        className="inline-flex h-7 items-center gap-1.5 rounded-btn bg-accent px-3 text-xs font-medium text-white disabled:opacity-60"
+                      >
+                        {bulkSending ? (
+                          <><span className="h-3 w-3 animate-spin rounded-full border border-white/30 border-t-white" />Sending...</>
+                        ) : `Generate & Send to All (${selectedCustomers.size})`}
+                      </button>
+                      <button type="button" onClick={() => setSelectedCustomers(new Set())} className="text-xs text-content-muted hover:text-content">
+                        Clear
+                      </button>
+                    </div>
+                  )}
                   {customers.length === 0 ? (
                     <div className="px-6 py-12 text-center">
                       <p className="text-sm font-medium text-content">No customers yet</p>
@@ -588,6 +922,17 @@ export function DashboardClient({
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b border-line text-left">
+                          <th className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              className="rounded border-line"
+                              checked={selectedCustomers.size === displayedCustomers.length && displayedCustomers.length > 0}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedCustomers(new Set(displayedCustomers.map((c) => c.id)));
+                                else setSelectedCustomers(new Set());
+                              }}
+                            />
+                          </th>
                           <th className="px-6 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Name</th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Phone</th>
                           <th className="px-4 py-3 text-xs font-medium uppercase tracking-wide text-content-muted">Last purchase</th>
@@ -607,7 +952,7 @@ export function DashboardClient({
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
-                        {sortedCustomers.map((customer) => {
+                        {displayedCustomers.map((customer) => {
                           const status = latestStatus.get(customer.id);
                           const row = rowState[customer.id];
                           const customerStatus = customer.status;
@@ -617,6 +962,20 @@ export function DashboardClient({
                           return (
                             <Fragment key={customer.id}>
                               <tr className="group relative border-l-2 border-l-transparent align-top transition-colors hover:border-l-accent hover:bg-accent/5">
+                                <td className="px-4 py-3.5">
+                                  <input
+                                    type="checkbox"
+                                    className="rounded border-line"
+                                    checked={selectedCustomers.has(customer.id)}
+                                    onChange={(e) => {
+                                      const next = new Set(selectedCustomers);
+                                      if (e.target.checked) next.add(customer.id);
+                                      else next.delete(customer.id);
+                                      setSelectedCustomers(next);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                </td>
                                 <td className="px-6 py-3.5">
                                   <button type="button" onClick={() => setExpandedCustomer(expanded ? null : customer.id)} className="text-left">
                                     <div className="font-medium text-content hover:text-accent transition-colors">
@@ -663,7 +1022,7 @@ export function DashboardClient({
                               </tr>
                               {expanded && (
                                 <tr>
-                                  <td colSpan={7} className="bg-base px-6 py-3">
+                                  <td colSpan={8} className="bg-base px-6 py-3">
                                     {customerMessages.length === 0 ? (
                                       <p className="text-xs text-content-muted">No messages sent to {customer.name} yet.</p>
                                     ) : (
@@ -692,17 +1051,40 @@ export function DashboardClient({
 
                 {/* Message feed */}
                 <div className="overflow-hidden rounded-card border border-line bg-surface">
-                  <div className="border-b border-line px-6 py-4">
+                  <div className="border-b border-line px-4 py-3 space-y-2">
                     <h2 className="font-heading text-sm font-semibold text-content">Message history</h2>
+                    <input
+                      type="search"
+                      placeholder="Search by customer or message…"
+                      value={messageSearch}
+                      onChange={(e) => setMessageSearch(e.target.value)}
+                      className="w-full rounded-btn border border-line bg-base px-3 py-1.5 text-xs text-content placeholder:text-content-muted/60 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {(["all", "outbound", "inbound", "failed", "queued"] as const).map((f) => (
+                        <button
+                          key={f}
+                          type="button"
+                          onClick={() => setStatusFilter(f)}
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                            statusFilter === f
+                              ? "bg-accent text-white"
+                              : "bg-line text-content-muted hover:text-content"
+                          }`}
+                        >
+                          {f === "outbound" ? "Sent" : f === "inbound" ? "Replies" : f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div className="overflow-y-auto divide-y divide-line" style={{ maxHeight: "520px" }}>
-                    {messages.length === 0 ? (
+                    {filteredMessages.length === 0 ? (
                       <div className="px-6 py-10 text-center">
                         <p className="text-sm font-medium text-content">No messages yet</p>
                         <p className="mt-1 text-xs text-content-muted">Send a message to see it here.</p>
                       </div>
                     ) : (
-                      messages.map((message) => (
+                      filteredMessages.map((message) => (
                         <div key={message.id} className="px-5 py-3.5">
                           <div className="mb-2 flex items-center justify-between">
                             <Badge tone={message.direction === "inbound" ? "brand" : "gray"}>
@@ -761,6 +1143,178 @@ export function DashboardClient({
                   </ResponsiveContainer>
                 </div>
               </div>
+
+              {/* Revenue recovered timeline */}
+              <div className="mt-5 rounded-card border border-line bg-surface p-5">
+                <h3 className="mb-4 font-heading text-sm font-semibold text-content">Revenue recovered — last 6 months</h3>
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart data={revenueTimeline} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                    <defs>
+                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#2A2D35" vertical={false} />
+                    <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false}
+                      tickFormatter={(v: number) => `$${v}`} />
+                    <Tooltip
+                      contentStyle={{ background: "#1a1d24", border: "1px solid #2A2D35", borderRadius: "8px", fontSize: "12px" }}
+                      labelStyle={{ color: "#9ca3af" }} itemStyle={{ color: "#e5e7eb" }}
+                      formatter={(v: unknown) => [`$${v as number}`, "Recovered"]}
+                    />
+                    <Area type="monotone" dataKey="recovered" stroke="#10B981" strokeWidth={2} fill="url(#revGrad)" dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Reply heatmap */}
+              <div className="mt-5 rounded-card border border-line bg-surface p-5">
+                <h3 className="mb-4 font-heading text-sm font-semibold text-content">Reply heatmap — day × hour</h3>
+                <div className="overflow-x-auto">
+                  <div className="flex gap-1 min-w-max">
+                    <div className="flex flex-col gap-1 pr-2 pt-5">
+                      {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+                        <span key={d} className="h-4 text-[10px] leading-4 text-content-muted text-right">{d}</span>
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <div className="flex gap-0.5 mb-1">
+                        {Array.from({ length: 24 }, (_, h) => (
+                          <span key={h} className="w-4 text-center text-[8px] text-content-muted">{h % 6 === 0 ? h : ""}</span>
+                        ))}
+                      </div>
+                      {replyHeatmap.map((row, day) => (
+                        <div key={day} className="flex gap-0.5">
+                          {row.map((count, hour) => {
+                            const max = Math.max(...replyHeatmap.flat(), 1);
+                            const intensity = count / max;
+                            const bg = count === 0
+                              ? "bg-white/5"
+                              : intensity < 0.25 ? "bg-blue-900/60"
+                              : intensity < 0.5 ? "bg-blue-700/70"
+                              : intensity < 0.75 ? "bg-blue-500/80"
+                              : "bg-blue-400";
+                            return (
+                              <div key={hour} title={`${["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day]} ${hour}:00 — ${count} replies`}
+                                className={`h-4 w-4 rounded-sm ${bg}`} />
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement funnel */}
+              <div className="mt-5 rounded-card border border-line bg-surface p-5">
+                <h3 className="mb-4 font-heading text-sm font-semibold text-content">Engagement funnel</h3>
+                <div className="space-y-3">
+                  {funnelData.map((step) => (
+                    <div key={step.label}>
+                      <div className="mb-1 flex items-center justify-between">
+                        <span className="text-xs text-content-muted">{step.label}</span>
+                        <span className="text-xs font-medium text-content">{step.count.toLocaleString()} <span className="text-content-muted">({step.pct}%)</span></span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${step.pct}%`, backgroundColor: step.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Menu / Service Intelligence — restaurants, salons, retail */}
+              {menuStats.length > 0 && (
+                <div className="mt-5 rounded-card border border-line bg-surface p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-heading text-sm font-semibold text-content">
+                        {industry === "Restaurant" ? "Menu Intelligence" : industry === "Salon" ? "Service Intelligence" : "Product Intelligence"}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-content-muted">
+                        {menuMentions.length > 0
+                          ? `Ranked by customer mentions — ${menuMentions.length} mention${menuMentions.length !== 1 ? "s" : ""} detected`
+                          : "Mention data builds as customers reply to your messages"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Category group headers */}
+                  {(() => {
+                    const categories = Array.from(new Set(menuStats.map((i) => i.category ?? "Other")));
+                    return categories.map((cat) => {
+                      const items = menuStats.filter((i) => (i.category ?? "Other") === cat);
+                      const maxTotal = Math.max(...menuStats.map((i) => i.total), 1);
+                      return (
+                        <div key={cat} className="mb-4">
+                          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted/60">{cat}</p>
+                          <div className="space-y-2">
+                            {items.map((item) => {
+                              const barWidth = item.total > 0 ? (item.total / maxTotal) * 100 : 0;
+                              const sentiment =
+                                item.total === 0 ? "none"
+                                : item.score > 0.2 ? "positive"
+                                : item.score < -0.2 ? "negative"
+                                : "neutral";
+                              const barColor =
+                                sentiment === "positive" ? "#10B981"
+                                : sentiment === "negative" ? "#EF4444"
+                                : "#6B7280";
+                              return (
+                                <div key={item.id} className="grid grid-cols-[1fr_auto] items-center gap-3">
+                                  <div>
+                                    <div className="mb-1 flex items-center gap-2">
+                                      <span className="text-xs font-medium text-content">{item.name}</span>
+                                      {item.price && (
+                                        <span className="text-[10px] text-content-muted">${item.price}</span>
+                                      )}
+                                      {item.total > 0 && (
+                                        <span className={`ml-auto text-[10px] font-medium ${
+                                          sentiment === "positive" ? "text-green-400"
+                                          : sentiment === "negative" ? "text-red-400"
+                                          : "text-content-muted"
+                                        }`}>
+                                          {sentiment === "positive" ? "Loved" : sentiment === "negative" ? "Issues" : "Neutral"}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full transition-all duration-700"
+                                        style={{ width: `${barWidth}%`, backgroundColor: barColor }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-xs font-semibold text-content">
+                                      {item.total > 0 ? item.total : "—"}
+                                    </span>
+                                    {item.total > 0 && (
+                                      <span className="block text-[10px] text-content-muted">mentions</span>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+
+                  {menuMentions.length === 0 && (
+                    <div className="mt-2 rounded-btn border border-dashed border-line p-4 text-center">
+                      <p className="text-xs text-content-muted">
+                        Mention data will appear here as customers reply to your messages and reference your {industry === "Restaurant" ? "dishes" : industry === "Salon" ? "services" : "products"}.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -798,14 +1352,40 @@ export function DashboardClient({
                     step={type === "number" ? "0.01" : undefined} className={slideInputClass} />
                 </div>
               ))}
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-0.5 rounded border-line"
+                />
+                <span className="text-xs text-content-muted leading-relaxed">
+                  This customer has consented to receive SMS messages from my business. <span className="text-danger">*</span>
+                </span>
+              </label>
+              {addDuplicateWarning && (
+                <div className="rounded-btn border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-400">
+                  <p className="font-medium mb-2">A customer with this phone number already exists: <strong>{addDuplicateWarning.name}</strong></p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => addCustomer(true)}
+                      className="rounded-btn bg-yellow-500/20 px-3 py-1.5 text-xs font-medium hover:bg-yellow-500/30">
+                      Add anyway
+                    </button>
+                    <button type="button" onClick={() => setAddDuplicateWarning(null)}
+                      className="rounded-btn px-3 py-1.5 text-xs font-medium text-content-muted hover:text-content">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
               {addError && <p className="text-xs text-danger">{addError}</p>}
             </div>
             <div className="flex gap-2.5 border-t border-line px-6 py-4">
-              <button type="button" onClick={() => setAddOpen(false)} disabled={addLoading}
+              <button type="button" onClick={() => { setAddOpen(false); setConsentChecked(false); setAddDuplicateWarning(null); }} disabled={addLoading}
                 className="flex-1 h-9 rounded-btn border border-line text-sm font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content disabled:opacity-60">
                 Cancel
               </button>
-              <button type="button" onClick={addCustomer} disabled={addLoading}
+              <button type="button" onClick={() => addCustomer()} disabled={addLoading}
                 className="flex flex-1 h-9 items-center justify-center gap-2 rounded-btn bg-accent text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60">
                 {addLoading ? (
                   <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden />Adding...</>

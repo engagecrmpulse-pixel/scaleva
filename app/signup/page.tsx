@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -19,21 +18,21 @@ export default function SignupPage() {
     setMessage(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
+    const data = await res.json() as { hasSession?: boolean; needsEmailConfirmation?: boolean; error?: string };
 
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (!res.ok || data.error) {
+      setError(data.error ?? "Signup failed. Please try again.");
       return;
     }
 
-    if (data.session) {
+    if (data.hasSession) {
       router.push("/onboarding");
       router.refresh();
       return;

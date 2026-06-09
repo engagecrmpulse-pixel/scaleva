@@ -8,10 +8,12 @@ export type Json =
 
 export type MessageStatus =
   | "queued"
+  | "queued_quiet_hours"
   | "sent"
   | "delivered"
   | "failed"
-  | "received";
+  | "received"
+  | "test_sent";
 
 export type MessageDirection = "outbound" | "inbound";
 
@@ -29,6 +31,31 @@ export interface BusinessConfig {
   emailNotifyReply?: boolean;
   emailNotifyFailed?: boolean;
   emailNotifyDailySummary?: boolean;
+  // AI Personality controls
+  aiTone?: string;
+  aiLength?: string;
+  aiEmoji?: string;
+  aiSignature?: string;
+  aiForbiddenWords?: string;
+  aiNoCompetitors?: boolean;
+  aiIncludeOffers?: boolean;
+  aiCurrentOffer?: string;
+  aiLanguage?: string;
+  aiCustomOpener?: string;
+  // Feature flags
+  autoReplyEnabled?: boolean;
+  reviewRequestEnabled?: boolean;
+  reviewLink?: string;
+  sequenceEnabled?: boolean;
+  // Business profile (set in onboarding + settings)
+  businessHours?: Record<string, { open: string; close: string; closed?: boolean }>;
+  businessPhone?: string;
+  businessAddress?: string;
+  businessWebsite?: string;
+  faq?: Array<{ question: string; answer: string }>;
+  specialOffer?: string;
+  bookingLink?: string;
+  loyaltyProgram?: string;
   [key: string]: Json | undefined;
 }
 
@@ -80,6 +107,11 @@ export interface Database {
           return_visit_count: number;
           last_return_date: string | null;
           status: string | null;
+          opted_out: boolean;
+          consent_given: boolean;
+          consent_date: string | null;
+          ltv: number;
+          last_review_request_at: string | null;
         };
         Insert: {
           id?: string;
@@ -93,6 +125,11 @@ export interface Database {
           return_visit_count?: number;
           last_return_date?: string | null;
           status?: string | null;
+          opted_out?: boolean;
+          consent_given?: boolean;
+          consent_date?: string | null;
+          ltv?: number;
+          last_review_request_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
         Relationships: [];
@@ -106,6 +143,11 @@ export interface Database {
           sent_at: string | null;
           status: MessageStatus;
           direction: MessageDirection;
+          twilio_sid: string | null;
+          topic: string | null;
+          consent_verified: boolean;
+          attributed: boolean;
+          attributed_revenue: number;
         };
         Insert: {
           id?: string;
@@ -115,6 +157,11 @@ export interface Database {
           sent_at?: string | null;
           status?: MessageStatus;
           direction?: MessageDirection;
+          twilio_sid?: string | null;
+          topic?: string | null;
+          consent_verified?: boolean;
+          attributed?: boolean;
+          attributed_revenue?: number;
         };
         Update: Partial<Database["public"]["Tables"]["messages"]["Insert"]>;
         Relationships: [];
@@ -189,6 +236,88 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      processed_webhooks: {
+        Row: { id: string; event_id: string; processed_at: string };
+        Insert: { id?: string; event_id: string; processed_at?: string };
+        Update: { event_id?: string; processed_at?: string };
+        Relationships: [];
+      };
+      customer_insights: {
+        Row: { id: string; customer_id: string; best_reply_hour: number | null; updated_at: string };
+        Insert: { id?: string; customer_id: string; best_reply_hour?: number | null; updated_at?: string };
+        Update: { best_reply_hour?: number | null; updated_at?: string };
+        Relationships: [];
+      };
+      sequence_enrollments: {
+        Row: {
+          id: string;
+          customer_id: string;
+          business_id: string;
+          step: number;
+          enrolled_at: string;
+          next_step_at: string | null;
+          completed: boolean;
+          exited_reason: string | null;
+        };
+        Insert: {
+          id?: string;
+          customer_id: string;
+          business_id: string;
+          step?: number;
+          enrolled_at?: string;
+          next_step_at?: string | null;
+          completed?: boolean;
+          exited_reason?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["sequence_enrollments"]["Insert"]>;
+        Relationships: [];
+      };
+      menu_items: {
+        Row: {
+          id: string;
+          business_id: string;
+          name: string;
+          category: string | null;
+          price: number | null;
+          description: string | null;
+          active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          name: string;
+          category?: string | null;
+          price?: number | null;
+          description?: string | null;
+          active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["menu_items"]["Insert"]>;
+        Relationships: [];
+      };
+      menu_item_mentions: {
+        Row: {
+          id: string;
+          business_id: string;
+          menu_item_id: string;
+          message_id: string | null;
+          sentiment: "positive" | "negative" | "neutral" | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          menu_item_id: string;
+          message_id?: string | null;
+          sentiment?: "positive" | "negative" | "neutral" | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["menu_item_mentions"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -202,3 +331,5 @@ export type Message = Database["public"]["Tables"]["messages"]["Row"];
 export type Interaction = Database["public"]["Tables"]["interactions"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Subscription = Database["public"]["Tables"]["subscriptions"]["Row"];
+export type MenuItem = Database["public"]["Tables"]["menu_items"]["Row"];
+export type MenuItemMention = Database["public"]["Tables"]["menu_item_mentions"]["Row"];

@@ -1,6 +1,7 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/utils/helpers";
 import {
   DATA_SOURCES,
@@ -11,6 +12,7 @@ import {
 import { StepDataSource } from "./steps/StepDataSource";
 import { StepConnect } from "./steps/StepConnect";
 import { StepDetails } from "./steps/StepDetails";
+import { StepBusinessProfile } from "./steps/StepBusinessProfile";
 import { StepPreview } from "./steps/StepPreview";
 import { StepLaunch } from "./steps/StepLaunch";
 
@@ -19,7 +21,7 @@ export interface StepProps {
   update: (partial: Partial<WizardState>) => void;
 }
 
-const STEP_LABELS = ["Data source", "Connect", "Business", "Preview", "Launch"];
+const STEP_LABELS = ["Data source", "Connect", "Business", "Profile", "Preview", "Launch"];
 
 function canAdvance(step: number, state: WizardState): boolean {
   switch (step) {
@@ -33,6 +35,8 @@ function canAdvance(step: number, state: WizardState): boolean {
     case 3:
       return state.businessName.trim().length > 0;
     case 4:
+      return true; // profile step is optional
+    case 5:
       return state.previewMessage.trim().length > 0;
     default:
       return true;
@@ -50,6 +54,39 @@ export function Wizard({ initialStep = 1, initialState }: WizardProps) {
     ...initialWizardState(),
     ...initialState,
   }));
+  const [storageKey, setStorageKey] = useState<string | null>(null);
+
+  // Restore progress from localStorage on mount
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      const key = `scaleva_onboarding_${data.user.id}`;
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { step: number; state: WizardState };
+          setState((prev) => ({ ...prev, ...parsed.state }));
+          setStep(parsed.step);
+        }
+      } catch {}
+      setStorageKey(key);
+    });
+  }, []);
+
+  // Persist step + state to localStorage on every change
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ step, state }));
+    } catch {}
+  }, [step, state, storageKey]);
+
+  function clearStorage() {
+    if (storageKey) {
+      try { localStorage.removeItem(storageKey); } catch {}
+    }
+  }
 
   function update(partial: Partial<WizardState>) {
     setState((prev) => ({ ...prev, ...partial }));
@@ -144,8 +181,9 @@ export function Wizard({ initialStep = 1, initialState }: WizardProps) {
           {step === 1 && <StepDataSource {...stepProps} />}
           {step === 2 && <StepConnect {...stepProps} />}
           {step === 3 && <StepDetails {...stepProps} />}
-          {step === 4 && <StepPreview {...stepProps} />}
-          {step === 5 && <StepLaunch {...stepProps} onBack={back} />}
+          {step === 4 && <StepBusinessProfile {...stepProps} />}
+          {step === 5 && <StepPreview {...stepProps} />}
+          {step === 6 && <StepLaunch {...stepProps} onBack={back} onClearStorage={clearStorage} />}
         </div>
 
         {step < TOTAL_STEPS && (

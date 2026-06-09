@@ -9,6 +9,7 @@ import type { StepProps } from "../Wizard";
 
 interface StepLaunchProps extends StepProps {
   onBack: () => void;
+  onClearStorage?: () => void;
 }
 
 function firstSendDate(cadence: string): string {
@@ -22,7 +23,7 @@ function firstSendDate(cadence: string): string {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-export function StepLaunch({ state, onBack }: StepLaunchProps) {
+export function StepLaunch({ state, onBack, onClearStorage }: StepLaunchProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +43,38 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       return;
     }
 
+    // Prevent duplicate business creation
+    const { data: existingBiz } = await supabase
+      .from("businesses")
+      .select("id")
+      .eq("owner_id", user.id)
+      .maybeSingle();
+
+    if (existingBiz) {
+      onClearStorage?.();
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
     const config: BusinessConfig = {
       autopilot: false,
       cadence: state.cadence,
       goals: state.goals,
       customInstructions: state.customInstructions,
+      businessHours: Object.fromEntries(
+        Object.entries(state.businessHours).map(([day, h]) => [
+          day, { open: h.open, close: h.close, closed: h.closed },
+        ])
+      ) as BusinessConfig["businessHours"],
+      businessPhone: state.businessPhone || undefined,
+      businessAddress: state.businessAddress || undefined,
+      specialOffer: state.specialOffer || undefined,
+      bookingLink: state.bookingLink || undefined,
+      loyaltyProgram: state.loyaltyProgram || undefined,
+      faq: state.faq
+        .filter((f) => f.question.trim() && f.answer.trim())
+        .map((f) => ({ question: f.question, answer: f.answer })),
     };
 
     const { data: business, error: businessError } = await supabase
@@ -67,6 +95,21 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
       setLoading(false);
       setError(businessError?.message ?? "Could not create your business.");
       return;
+    }
+
+    // Save menu / service items
+    const validItems = state.menuItems.filter((i) => i.name.trim());
+    if (validItems.length > 0) {
+      await supabase.from("menu_items").insert(
+        validItems.map((item, idx) => ({
+          business_id: business.id,
+          name: item.name.trim(),
+          category: item.category || null,
+          price: item.price ? parseFloat(item.price) : null,
+          description: item.description.trim() || null,
+          sort_order: idx,
+        }))
+      );
     }
 
     if (state.customers.length > 0) {
@@ -96,6 +139,7 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
 
     setLoading(false);
     setLaunched(true);
+    onClearStorage?.();
     setTimeout(() => {
       router.push("/dashboard");
       router.refresh();
@@ -145,6 +189,9 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
           <SummaryRow label="Business" value={state.businessName} />
           <SummaryRow label="Industry" value={state.industry} />
           <SummaryRow label="Customers" value={String(state.customers.length)} />
+          {state.menuItems.filter((i) => i.name.trim()).length > 0 && (
+            <SummaryRow label="Items on file" value={String(state.menuItems.filter((i) => i.name.trim()).length)} />
+          )}
           <SummaryRow label="Cadence" value={state.cadence} />
           <SummaryRow label="First send" value={firstSendDate(state.cadence)} />
         </div>
@@ -165,6 +212,12 @@ export function StepLaunch({ state, onBack }: StepLaunchProps) {
         <SummaryRow label="Business name" value={state.businessName || "—"} />
         <SummaryRow label="Industry" value={state.industry} />
         <SummaryRow label="Customers imported" value={String(state.customers.length)} />
+        {state.menuItems.filter((i) => i.name.trim()).length > 0 && (
+          <SummaryRow label="Items on file" value={String(state.menuItems.filter((i) => i.name.trim()).length)} />
+        )}
+        {state.specialOffer.trim() && (
+          <SummaryRow label="Current offer" value={state.specialOffer.length > 40 ? `${state.specialOffer.slice(0, 40)}…` : state.specialOffer} />
+        )}
         <SummaryRow label="Message cadence" value={state.cadence} />
         <SummaryRow label="Goals" value={state.goals.length ? state.goals.join(", ") : "—"} />
         <SummaryRow label="First send date" value={firstSendDate(state.cadence)} />

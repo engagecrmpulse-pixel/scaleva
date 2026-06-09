@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "./DashboardClient";
-import type { Customer, Message, Notification, Subscription } from "@/utils/database.types";
+import type { Customer, Message, MenuItem, MenuItemMention, Notification, Subscription } from "@/utils/database.types";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -32,6 +32,8 @@ export default async function DashboardPage() {
     { data: messages },
     { data: notifications },
     { data: subscriptionData },
+    { data: menuItemsData },
+    { data: menuMentionsData },
   ] = await Promise.all([
     supabase
       .from("customers")
@@ -55,6 +57,18 @@ export default async function DashboardPage() {
       .select("*")
       .eq("business_id", business.id)
       .maybeSingle(),
+    supabase
+      .from("menu_items")
+      .select("*")
+      .eq("business_id", business.id)
+      .eq("active", true)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("menu_item_mentions")
+      .select("*")
+      .eq("business_id", business.id)
+      .order("created_at", { ascending: false })
+      .limit(500),
   ]);
 
   const subscription = (subscriptionData ?? null) as Subscription | null;
@@ -72,6 +86,8 @@ export default async function DashboardPage() {
       initialCustomers={(customers ?? []) as Customer[]}
       initialMessages={(messages ?? []) as Message[]}
       initialNotifications={(notifications ?? []) as Notification[]}
+      initialMenuItems={(menuItemsData ?? []) as MenuItem[]}
+      initialMenuMentions={(menuMentionsData ?? []) as MenuItemMention[]}
       subscription={subscription}
       isPastDue={isPastDue}
     />

@@ -17,10 +17,10 @@ export default function LandingPage() {
               Log in
             </Link>
             <Link
-              href="/signup"
+              href="/quiz"
               className="inline-flex h-9 items-center rounded-btn bg-accent px-4 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
             >
-              Get started free
+              Get started now
             </Link>
           </div>
         </div>
@@ -42,10 +42,10 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex items-center gap-4">
               <Link
-                href="/signup"
+                href="/quiz"
                 className="inline-flex h-10 items-center rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
               >
-                Get started free
+                Get started now
               </Link>
               <Link
                 href="/login"

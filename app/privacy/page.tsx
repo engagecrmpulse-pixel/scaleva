@@ -77,6 +77,34 @@ export default function PrivacyPage() {
           </section>
 
           <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">SMS consent</h2>
+            <p>
+              We only send messages to customers who have explicitly consented. Businesses are required to
+              confirm customer consent before adding customers to Scaleva. Consent is logged with a timestamp
+              in our database and cannot be bypassed.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">Opt-out</h2>
+            <p>
+              Customers can opt out at any time by replying <strong className="text-content">STOP</strong> to
+              any message. We process opt-outs immediately — the customer is marked as opted-out and will
+              receive no further messages until they reply <strong className="text-content">START</strong> to
+              resubscribe. Businesses cannot override opt-outs.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 font-heading text-base font-semibold text-content">Data deletion</h2>
+            <p>
+              Customers can request deletion of their data by contacting the business directly. Businesses can
+              delete individual customer records at any time from their dashboard. Full account deletion
+              removes all associated customer data within 30 days.
+            </p>
+          </section>
+
+          <section>
             <h2 className="mb-3 font-heading text-base font-semibold text-content">TCPA compliance</h2>
             <p>
               Scaleva is a tool for businesses to communicate with their own customers.

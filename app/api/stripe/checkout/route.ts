@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
     success_url: `${appUrl}/dashboard?checkout=success`,
     cancel_url: `${appUrl}/pricing?checkout=cancelled`,
     customer_email: user.email,
+    subscription_data: {
+      trial_period_days: 14,
+    },
     metadata: {
       userId: user.id,
       businessId: businessId ?? "",

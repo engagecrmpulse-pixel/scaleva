@@ -28,33 +28,35 @@ const FLAT_PLANS: FlatPlan[] = [
   {
     id: "growth",
     name: "Growth",
-    price: 399,
-    annualPrice: 319,
-    customerLimit: "1,500 customers",
-    messageLimit: "6,000 messages/mo",
-    features: ["All integrations (Square, Stripe, Shopify…)", "Full analytics", "Autopilot scheduling", "Two-way SMS", "Priority support"],
+    price: 499,
+    annualPrice: 399,
+    customerLimit: "2,000 customers",
+    messageLimit: "8,000 messages/mo",
+    features: ["All integrations (Square, Stripe, Shopify…)", "AI Conversation Engine — 24/7 replies", "Industry-specific onboarding", "Full analytics", "Autopilot scheduling", "Priority support"],
     highlight: true,
   },
   {
     id: "pro",
     name: "Pro",
-    price: 699,
-    annualPrice: 559,
-    customerLimit: "5,000 customers",
-    messageLimit: "25,000 messages/mo",
-    features: ["Everything in Growth", "Revenue tracking", "Data export", "Dedicated onboarding"],
+    price: 899,
+    annualPrice: 719,
+    customerLimit: "7,500 customers",
+    messageLimit: "30,000 messages/mo",
+    features: ["Everything in Growth", "Menu & service intelligence", "Revenue tracking", "Data export", "Dedicated onboarding"],
     highlight: false,
   },
 ];
 
 const COMPARISON: { label: string; starter: string | boolean; growth: string | boolean; pro: string | boolean; enterprise: string | boolean }[] = [
-  { label: "Customers", starter: "500", growth: "1,500", pro: "5,000", enterprise: "Unlimited" },
-  { label: "Messages / month", starter: "2,000", growth: "6,000", pro: "25,000", enterprise: "Unlimited" },
+  { label: "Customers", starter: "500", growth: "2,000", pro: "7,500", enterprise: "Unlimited" },
+  { label: "Messages / month", starter: "2,000", growth: "8,000", pro: "30,000", enterprise: "Unlimited" },
   { label: "AI message generation", starter: true, growth: true, pro: true, enterprise: true },
+  { label: "Industry-specific onboarding", starter: true, growth: true, pro: true, enterprise: true },
   { label: "Square / Stripe / Shopify", starter: false, growth: true, pro: true, enterprise: true },
+  { label: "AI Conversation Engine", starter: false, growth: true, pro: true, enterprise: true },
   { label: "Autopilot scheduling", starter: false, growth: true, pro: true, enterprise: true },
-  { label: "Two-way SMS", starter: false, growth: true, pro: true, enterprise: true },
   { label: "Full analytics", starter: false, growth: true, pro: true, enterprise: true },
+  { label: "Menu & service intelligence", starter: false, growth: false, pro: true, enterprise: true },
   { label: "Revenue tracking", starter: false, growth: false, pro: true, enterprise: true },
   { label: "Data export", starter: false, growth: false, pro: true, enterprise: true },
   { label: "Dedicated onboarding", starter: false, growth: false, pro: true, enterprise: true },
@@ -171,7 +173,7 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
         {/* Title */}
         <div className="mb-4 text-center">
           <h1 className="font-heading text-4xl font-bold tracking-[-0.03em] text-gray-900">Simple, transparent pricing</h1>
-          <p className="mt-3 text-gray-500">Start automating customer re-engagement today. Upgrade or downgrade anytime.</p>
+          <p className="mt-3 text-gray-500">14-day free trial. Cancel anytime.</p>
         </div>
 
         {/* Annual toggle */}
@@ -225,6 +227,11 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
                 <p className={`mt-1 text-xs ${plan.highlight ? "text-blue-200" : "text-gray-400"}`}>
                   {plan.customerLimit} · {plan.messageLimit}
                 </p>
+                {!current && (
+                  <p className={`mt-1 text-xs font-medium ${plan.highlight ? "text-blue-200" : "text-green-600"}`}>
+                    14-day free trial included
+                  </p>
+                )}
 
                 <ul className="mb-6 mt-5 flex-1 space-y-2.5">
                   {plan.features.map((f) => (
@@ -338,6 +345,7 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
             <div className="mt-3 flex flex-wrap gap-6 text-sm">
               <span><span className="font-mono font-bold text-gray-900">$0.02</span> <span className="text-gray-400">/ message sent</span></span>
               <span><span className="font-mono font-bold text-gray-900">$0.01</span> <span className="text-gray-400">/ customer/mo</span></span>
+              <span><span className="font-mono font-bold text-gray-900">Unlimited</span> <span className="text-gray-400">AI conversations</span></span>
             </div>
           </div>
           <div className="mt-5 flex flex-col items-start gap-3 md:mt-0 md:items-end">
