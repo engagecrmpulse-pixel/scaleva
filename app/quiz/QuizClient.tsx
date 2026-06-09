@@ -178,12 +178,6 @@ const INDUSTRY_LABELS: Record<string, string> = {
   Other: "Local Business",
 };
 
-const SIZE_IMPACT: Record<string, { customers: string; lowRevenue: string; highRevenue: string }> = {
-  under_100: { customers: "~60", lowRevenue: "2,400", highRevenue: "8,000" },
-  "100_500": { customers: "~270", lowRevenue: "14,000", highRevenue: "42,000" },
-  "500_2000": { customers: "~800", lowRevenue: "45,000", highRevenue: "120,000" },
-  over_2000: { customers: "2,000+", lowRevenue: "150,000", highRevenue: "400,000" },
-};
 
 const GOAL_LABELS: Record<string, string> = {
   retention: "More repeat visits",
@@ -216,11 +210,9 @@ function ResultsScreen({ answers }: { answers: Record<string, string> }) {
   }, []);
 
   const industry = answers.industry ?? "Other";
-  const size = answers.size ?? "100_500";
   const goal = answers.goal ?? "retention";
   const voice = answers.voice ?? "Friendly";
   const sendTime = answers.send_time ?? "evening";
-  const impact = SIZE_IMPACT[size] ?? SIZE_IMPACT["100_500"];
 
   function goSignup() {
     try {
@@ -234,7 +226,6 @@ function ResultsScreen({ answers }: { answers: Record<string, string> }) {
     { label: "AI voice", value: VOICE_LABELS[voice] ?? voice },
     { label: "Primary goal", value: GOAL_LABELS[goal] ?? goal },
     { label: "Best send time", value: TIME_LABELS[sendTime] ?? sendTime },
-    { label: "Customer base", value: impact.customers + " reachable customers" },
   ];
 
   return (
@@ -276,18 +267,6 @@ function ResultsScreen({ answers }: { answers: Record<string, string> }) {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Revenue impact */}
-        <div className="mt-4 rounded-card border border-accent/20 bg-accent/5 p-5 text-center">
-          <p className="text-xs text-content-muted">Estimated revenue you can recover in 90 days</p>
-          <p className="mt-1.5 font-heading text-3xl font-bold tracking-tight text-content">
-            ${impact.lowRevenue}
-            <span className="text-content-muted">–${impact.highRevenue}</span>
-          </p>
-          <p className="mt-1 text-[11px] text-content-muted/60">
-            Based on {impact.customers} reachable customers · typical win-back rate for {INDUSTRY_LABELS[industry] ?? "your industry"}
-          </p>
         </div>
 
         {/* CTA */}
