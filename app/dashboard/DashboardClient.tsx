@@ -9,6 +9,8 @@ import {
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/Badge";
+import { AccountHealthScore } from "@/components/AccountHealthScore";
+import { SmartInsights } from "@/components/SmartInsights";
 import { formatCurrency, formatDate, totalSpend } from "@/utils/helpers";
 import type {
   BusinessConfig,
@@ -30,7 +32,80 @@ const PLAN_LIMITS: Record<string, number> = {
 interface Toast {
   id: string;
   message: string;
-  variant: "success" | "error";
+  variant: "success" | "error" | "milestone";
+  title?: string;
+}
+
+interface MilestoneData {
+  customerCount: number;
+  messagesSent: number;
+  repliesReceived: number;
+  returnedCount: number;
+  allTimeRevenue: number;
+  autopilot: boolean;
+}
+
+const MILESTONES: Array<{
+  id: string;
+  title: string;
+  message: string;
+  check: (d: MilestoneData) => boolean;
+}> = [
+  {
+    id: "first_customer",
+    title: "First Customer Added",
+    message: "Your customer list is live. Scaleva will now monitor their behavior and help bring them back.",
+    check: (d) => d.customerCount >= 1,
+  },
+  {
+    id: "first_message",
+    title: "First Message Sent",
+    message: "Your first AI-personalized message is out. Now watch the replies roll in.",
+    check: (d) => d.messagesSent >= 1,
+  },
+  {
+    id: "first_reply",
+    title: "First Customer Reply",
+    message: "A customer engaged — personal outreach is working. Keep the momentum going.",
+    check: (d) => d.repliesReceived >= 1,
+  },
+  {
+    id: "first_return",
+    title: "First Customer Returned",
+    message: "A customer came back because of Scaleva. This is exactly the ROI you subscribed for.",
+    check: (d) => d.returnedCount >= 1,
+  },
+  {
+    id: "autopilot_on",
+    title: "Autopilot Activated",
+    message: "Scaleva is now running on autopilot. Sit back — your customers are being taken care of.",
+    check: (d) => d.autopilot === true,
+  },
+  {
+    id: "revenue_100",
+    title: "$100 Revenue Recovered",
+    message: "Scaleva has officially paid for itself this month. And we're just getting started.",
+    check: (d) => d.allTimeRevenue >= 100,
+  },
+  {
+    id: "revenue_1000",
+    title: "$1,000 Revenue Recovered",
+    message: "Four-figure recovery. Your customers love hearing from you.",
+    check: (d) => d.allTimeRevenue >= 1000,
+  },
+  {
+    id: "revenue_5000",
+    title: "$5,000 Revenue Recovered",
+    message: "This is what retention looks like at scale. Outstanding.",
+    check: (d) => d.allTimeRevenue >= 5000,
+  },
+];
+
+function getTimeOfDayGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 interface DashboardClientProps {
@@ -220,11 +295,30 @@ function Sidebar({
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+  label,
+  value,
+  trend,
+  trendLabel,
+  accent,
+}: {
+  label: string;
+  value: string;
+  trend?: "up" | "neutral";
+  trendLabel?: string;
+  accent?: boolean;
+}) {
   return (
-    <div className="rounded-card border border-line bg-surface p-5">
-      <p className="font-mono text-[28px] font-semibold leading-none tracking-tight text-content">{value}</p>
+    <div className={`rounded-card border p-5 ${accent ? "border-accent/20 bg-accent/[0.04]" : "border-line bg-surface"}`}>
+      <p className={`font-mono text-[28px] font-semibold leading-none tracking-tight ${accent ? "text-accent" : "text-content"}`}>
+        {value}
+      </p>
       <p className="mt-2 text-xs text-content-muted">{label}</p>
+      {trendLabel && (
+        <p className={`mt-1 text-[10px] font-medium ${trend === "up" ? "text-green-400" : "text-content-muted/60"}`}>
+          {trendLabel}
+        </p>
+      )}
     </div>
   );
 }
@@ -236,6 +330,7 @@ function RecoveryHero({
   thisMonthCustomers,
   atRiskCount,
   autopilot,
+  monthlyGoal,
 }: {
   allTimeRevenue: number;
   allTimeCustomers: number;
@@ -243,9 +338,14 @@ function RecoveryHero({
   thisMonthCustomers: number;
   atRiskCount: number;
   autopilot: boolean;
+  monthlyGoal?: number;
 }) {
   const hasProof = allTimeRevenue > 0 || allTimeCustomers > 0;
   if (!hasProof && atRiskCount === 0) return null;
+
+  const goalPct = monthlyGoal && monthlyGoal > 0
+    ? Math.min((thisMonthRevenue / monthlyGoal) * 100, 100)
+    : null;
 
   return (
     <div className="mb-8 overflow-hidden rounded-card border border-accent/20 bg-gradient-to-br from-accent/[0.07] via-transparent to-transparent">
@@ -296,6 +396,30 @@ function RecoveryHero({
               <p className="text-xs font-medium text-accent">When customers return after a message,</p>
               <p className="mt-0.5 text-xs text-content-muted">recovered revenue appears here.</p>
             </div>
+          </div>
+        )}
+
+        {goalPct !== null && (
+          <div className="mt-5 border-t border-accent/10 pt-4">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-accent/50">
+                Monthly goal progress
+              </span>
+              <span className="text-xs font-medium text-content-muted">
+                {formatCurrency(thisMonthRevenue)} of {formatCurrency(monthlyGoal!)} target
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-accent to-green-400 transition-all duration-700"
+                style={{ width: `${goalPct}%` }}
+              />
+            </div>
+            <p className="mt-1 text-[10px] text-content-muted/60">
+              {goalPct >= 100
+                ? "Goal reached this month!"
+                : `${Math.round(100 - goalPct)}% to go — you're on track`}
+            </p>
           </div>
         )}
       </div>
@@ -403,6 +527,8 @@ export function DashboardClient({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+  const achievedMilestones = useRef<Set<string>>(new Set());
+  const milestoneStorageKey = `scaleva_milestones_${businessId}`;
   const [addOpen, setAddOpen] = useState(false);
   const [draft, setDraft] = useState<CustomerDraft>(emptyDraft());
   const [addLoading, setAddLoading] = useState(false);
@@ -421,16 +547,29 @@ export function DashboardClient({
   const sendDay = config.autopilotSendDay ?? "Monday";
   const sendTime = config.autopilotSendTime ?? "9 AM";
 
-  const addToast = useCallback((message: string, variant: "success" | "error") => {
+  const addToast = useCallback((message: string, variant: "success" | "error" | "milestone", title?: string) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, variant }]);
+    setToasts((prev) => [...prev, { id, message, variant, title }]);
     clearTimeout(toastTimer.current);
+    const duration = variant === "milestone" ? 7000 : 4000;
     toastTimer.current = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, duration);
   }, []);
 
   useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Load previously achieved milestones from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(milestoneStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as string[];
+        parsed.forEach((id) => achievedMilestones.current.add(id));
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const messagesSent = useMemo(() => messages.filter((m) => m.direction === "outbound").length, [messages]);
   const repliesReceived = useMemo(() => messages.filter((m) => m.direction === "inbound").length, [messages]);
@@ -454,6 +593,31 @@ export function DashboardClient({
   }, [messages, thisMonthStart]);
 
   const returnedCount = useMemo(() => customers.filter((c) => (c.return_visit_count ?? 0) > 0).length, [customers]);
+
+  // Milestone check — runs whenever key stats change
+  useEffect(() => {
+    const data: MilestoneData = {
+      customerCount: customers.length,
+      messagesSent: messages.filter((m) => m.direction === "outbound").length,
+      repliesReceived: messages.filter((m) => m.direction === "inbound").length,
+      returnedCount,
+      allTimeRevenue: messages.filter((m) => m.attributed).reduce((s, m) => s + (m.attributed_revenue ?? 0), 0),
+      autopilot,
+    };
+    let didAchieve = false;
+    for (const milestone of MILESTONES) {
+      if (!achievedMilestones.current.has(milestone.id) && milestone.check(data)) {
+        achievedMilestones.current.add(milestone.id);
+        addToast(milestone.message, "milestone", milestone.title);
+        didAchieve = true;
+      }
+    }
+    if (didAchieve) {
+      try {
+        localStorage.setItem(milestoneStorageKey, JSON.stringify(Array.from(achievedMilestones.current)));
+      } catch {}
+    }
+  }, [customers, messages, returnedCount, autopilot, addToast, milestoneStorageKey]);
   const conversionRate = useMemo(() => {
     if (!messagesSent) return 0;
     return Math.round((returnedCount / customers.length) * 100);
@@ -779,10 +943,16 @@ export function DashboardClient({
               </svg>
             </button>
             <div className="min-w-0">
-              <span className="text-sm font-medium text-content">Dashboard</span>
+              <span className="text-sm font-medium text-content">
+                {getTimeOfDayGreeting()}, {businessName}
+              </span>
               <span className="mx-2 hidden text-content-muted sm:inline">&middot;</span>
               <span className="hidden text-sm text-content-muted sm:inline">
-                {industry ?? "Business"} &middot; {voice ?? "Friendly"} voice
+                {atRiskCount > 0
+                  ? `${atRiskCount} customer${atRiskCount !== 1 ? "s" : ""} need attention`
+                  : autopilot
+                  ? "Autopilot is running"
+                  : `${industry ?? "Business"} · ${voice ?? "Friendly"} voice`}
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3">
@@ -810,6 +980,14 @@ export function DashboardClient({
 
           <div className="flex-1 overflow-y-auto">
             <div className="mx-auto max-w-5xl px-6 py-8">
+              <AccountHealthScore
+                config={config}
+                autopilot={autopilot}
+                customerCount={customers.length}
+                messagesSent={messagesSent}
+                onEnableAutopilot={toggleAutopilot}
+              />
+
               <RecoveryHero
                 allTimeRevenue={recoveryStats.allTimeRevenue}
                 allTimeCustomers={recoveryStats.allTimeCustomers}
@@ -817,18 +995,44 @@ export function DashboardClient({
                 thisMonthCustomers={recoveryStats.thisMonthCustomers}
                 atRiskCount={atRiskCount}
                 autopilot={autopilot}
+                monthlyGoal={(config.monthlyRevenueGoal as number | undefined)}
+              />
+
+              <SmartInsights
+                customers={customers}
+                messages={messages}
+                config={config}
+                autopilot={autopilot}
+                subscription={subscription}
+                atRiskCount={atRiskCount}
+                onEnableAutopilot={toggleAutopilot}
               />
 
               {/* Stats */}
               <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <StatCard label="Total customers" value={String(customers.length)} />
+                <StatCard
+                  label="Revenue recovered"
+                  value={formatCurrency(recoveryStats.allTimeRevenue)}
+                  accent={recoveryStats.allTimeRevenue > 0}
+                  trend={recoveryStats.thisMonthRevenue > 0 ? "up" : "neutral"}
+                  trendLabel={recoveryStats.thisMonthRevenue > 0 ? `+${formatCurrency(recoveryStats.thisMonthRevenue)} this month` : undefined}
+                />
+                <StatCard
+                  label="Customers returned"
+                  value={String(returnedCount)}
+                  trend={returnedCount > 0 ? "up" : "neutral"}
+                  trendLabel={returnedCount > 0 ? `${returnVisitRate}% return rate` : undefined}
+                />
+                <StatCard
+                  label="Reply rate"
+                  value={`${replyRate}%`}
+                  trend={replyRate > 10 ? "up" : "neutral"}
+                  trendLabel={repliesReceived > 0 ? `${repliesReceived} total replies` : undefined}
+                />
                 <StatCard label="Messages sent" value={String(messagesSent)} />
-                <StatCard label="Replies received" value={String(repliesReceived)} />
                 <StatCard label="Revenue tracked" value={formatCurrency(revenueTracked)} />
-                <StatCard label="Revenue from messages" value={formatCurrency(recoveryStats.allTimeRevenue)} />
-                <StatCard label="Customers returned" value={String(returnedCount)} />
                 <StatCard label="Conversion rate" value={`${conversionRate}%`} />
-                <StatCard label="Reply rate" value={`${replyRate}%`} />
                 <StatCard label="Return visit rate" value={`${returnVisitRate}%`} />
               </div>
 
@@ -914,9 +1118,27 @@ export function DashboardClient({
                     </div>
                   )}
                   {customers.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
-                      <p className="text-sm font-medium text-content">No customers yet</p>
-                      <p className="mt-1 text-xs text-content-muted">Add your first customer to get started.</p>
+                    <div className="px-6 py-14 text-center">
+                      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-accent/30 bg-accent/5">
+                        <svg className="h-6 w-6 text-accent/60" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm font-semibold text-content">Your customer list is ready</p>
+                      <p className="mt-1.5 text-xs leading-relaxed text-content-muted">
+                        Import from Square, Stripe, Shopify, or add manually.<br />
+                        Most businesses see 15–25% of customers return after their first outreach.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => { setDraft(emptyDraft()); setAddError(null); setAddDuplicateWarning(null); setConsentChecked(false); setAddOpen(true); }}
+                        className="mt-4 inline-flex h-8 items-center gap-1.5 rounded-btn bg-accent px-4 text-xs font-medium text-white hover:bg-accent-hover transition-colors"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                        Add first customer
+                      </button>
                     </div>
                   ) : (
                     <table className="w-full text-sm">
@@ -1079,9 +1301,22 @@ export function DashboardClient({
                   </div>
                   <div className="overflow-y-auto divide-y divide-line" style={{ maxHeight: "520px" }}>
                     {filteredMessages.length === 0 ? (
-                      <div className="px-6 py-10 text-center">
-                        <p className="text-sm font-medium text-content">No messages yet</p>
-                        <p className="mt-1 text-xs text-content-muted">Send a message to see it here.</p>
+                      <div className="px-5 py-10 text-center">
+                        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-line bg-base">
+                          <svg className="h-5 w-5 text-content-muted/50" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-medium text-content">
+                          {messageSearch || statusFilter !== "all" ? "No messages match this filter" : "No messages yet"}
+                        </p>
+                        <p className="mt-1 text-xs text-content-muted">
+                          {messageSearch || statusFilter !== "all"
+                            ? "Try adjusting your search or filter."
+                            : customers.length > 0
+                            ? "Select a customer and press Send to generate your first AI message."
+                            : "Add customers first, then send your first message."}
+                        </p>
                       </div>
                     ) : (
                       filteredMessages.map((message) => (
@@ -1397,23 +1632,47 @@ export function DashboardClient({
       )}
 
       {/* Toasts */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
-        {toasts.map((t) => (
-          <div key={t.id} className={`flex items-center gap-2.5 rounded-card border px-4 py-3 text-sm shadow-xl backdrop-blur-sm transition-all ${
-            t.variant === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-danger/30 bg-danger/10 text-danger"
-          }`}>
-            {t.variant === "success"
-              ? <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-              : <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
-            }
-            {t.message}
-            <button type="button" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))} className="ml-1 opacity-60 hover:opacity-100">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ))}
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
+        {toasts.map((t) => {
+          if (t.variant === "milestone") {
+            return (
+              <div key={t.id} className="flex items-start gap-3 rounded-card border border-yellow-500/30 bg-yellow-500/10 px-4 py-3.5 shadow-2xl backdrop-blur-sm">
+                <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-yellow-500/20 text-base">
+                  🏆
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-yellow-300">{t.title}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-yellow-400/80">{t.message}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+                  className="mt-0.5 flex-shrink-0 opacity-50 hover:opacity-100"
+                >
+                  <svg className="h-3.5 w-3.5 text-yellow-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            );
+          }
+          return (
+            <div key={t.id} className={`flex items-center gap-2.5 rounded-card border px-4 py-3 text-sm shadow-xl backdrop-blur-sm transition-all ${
+              t.variant === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-danger/30 bg-danger/10 text-danger"
+            }`}>
+              {t.variant === "success"
+                ? <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                : <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+              }
+              {t.message}
+              <button type="button" onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))} className="ml-1 opacity-60 hover:opacity-100">
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          );
+        })}
       </div>
     </>
   );

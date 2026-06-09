@@ -44,6 +44,9 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   const [industry, setIndustry] = useState(business.industry ?? "");
   const [voice, setVoice] = useState(business.voice ?? "");
   const [goals, setGoals] = useState(business.goals ?? "");
+  const [monthlyRevenueGoal, setMonthlyRevenueGoal] = useState(
+    String((config.monthlyRevenueGoal as number | undefined) ?? "")
+  );
   const [cadence, setCadence] = useState(config.cadence ?? "Weekly");
   const [sendDay, setSendDay] = useState(config.autopilotSendDay ?? "Monday");
   const [sendTime, setSendTime] = useState(config.autopilotSendTime ?? "9 AM");
@@ -59,7 +62,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
 
   // Track initial saved values to detect unsaved changes
   const [savedState, setSavedState] = useState({
-    name, industry, voice, goals, cadence, sendDay, sendTime, timezone,
+    name, industry, voice, goals, monthlyRevenueGoal, cadence, sendDay, sendTime, timezone,
     customInstructions, emailReply, emailFailed, emailSummary,
     autoReplyEnabled, reviewRequestEnabled, reviewLink, sequenceEnabled,
   });
@@ -67,6 +70,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   const isDirty =
     name !== savedState.name || industry !== savedState.industry ||
     voice !== savedState.voice || goals !== savedState.goals ||
+    monthlyRevenueGoal !== savedState.monthlyRevenueGoal ||
     cadence !== savedState.cadence || sendDay !== savedState.sendDay ||
     sendTime !== savedState.sendTime || timezone !== savedState.timezone ||
     customInstructions !== savedState.customInstructions ||
@@ -122,14 +126,21 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
   async function saveProfile() {
     setProfileSaving(true);
     setProfileSaved(false);
+    const goal = monthlyRevenueGoal ? Number.parseFloat(monthlyRevenueGoal) : undefined;
     await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, industry, voice, goals }),
+      body: JSON.stringify({
+        name,
+        industry,
+        voice,
+        goals,
+        config: { monthlyRevenueGoal: goal },
+      }),
     });
     setProfileSaving(false);
     setProfileSaved(true);
-    setSavedState((prev) => ({ ...prev, name, industry, voice, goals }));
+    setSavedState((prev) => ({ ...prev, name, industry, voice, goals, monthlyRevenueGoal }));
     setTimeout(() => setProfileSaved(false), 2000);
   }
 
@@ -275,7 +286,22 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             </div>
             <div>
               <label className={labelClass}>Goals (comma separated)</label>
-              <input className={inputClass} value={goals} onChange={e => setGoals(e.target.value)} />
+              <input className={inputClass} value={goals} onChange={e => setGoals(e.target.value)} placeholder="e.g. Increase return visits, Grow LTV" />
+            </div>
+            <div>
+              <label className={labelClass}>Monthly revenue recovery goal ($)</label>
+              <input
+                className={inputClass}
+                type="number"
+                min={0}
+                step={100}
+                value={monthlyRevenueGoal}
+                onChange={e => setMonthlyRevenueGoal(e.target.value)}
+                placeholder="e.g. 2000"
+              />
+              <p className="mt-1 text-xs text-content-muted">
+                Scaleva will track your progress toward this goal on the dashboard.
+              </p>
             </div>
           </div>
           <button
@@ -329,17 +355,31 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
 
         {/* AI instructions */}
         <div className={sectionClass}>
-          <h2 className={sectionHeaderClass}>AI instructions</h2>
-          <p className="mb-3 text-xs text-content-muted">
-            Extra context appended to every message prompt. Tell the AI your brand rules, seasonal offers, or anything else.
-          </p>
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <h2 className={sectionHeaderClass}>AI instructions</h2>
+              <p className="text-xs text-content-muted">
+                Tell the AI your brand rules, active offers, and tone. Every message will incorporate this context — the more detail you give, the more personalized the outreach.
+              </p>
+            </div>
+            {customInstructions.trim() && (
+              <span className="flex-shrink-0 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
+                Customized
+              </span>
+            )}
+          </div>
           <textarea
-            rows={4}
+            rows={5}
             className={`${inputClass} resize-none`}
             value={customInstructions}
             onChange={e => setCustomInstructions(e.target.value)}
-            placeholder="e.g. Always mention our happy hour deals. Never use the word 'cheap'."
+            placeholder={"Examples:\n• Always mention our Tuesday happy hour\n• We never use the word 'cheap' — say 'great value' instead\n• We're running a summer loyalty promotion through August\n• Always sign off with our tagline: 'See you soon!'"}
           />
+          {!customInstructions.trim() && (
+            <p className="mt-2 text-xs text-yellow-500/70">
+              Businesses that customize AI instructions see higher reply rates — add yours to unlock better messages.
+            </p>
+          )}
           <button
             type="button"
             onClick={saveAi}
@@ -352,7 +392,14 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
 
         {/* AI Features */}
         <div className={sectionClass}>
-          <h2 className={sectionHeaderClass}>AI features</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className={sectionHeaderClass} style={{ marginBottom: 0 }}>AI features</h2>
+            {(!autoReplyEnabled || !sequenceEnabled || !reviewRequestEnabled) && (
+              <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-semibold text-accent">
+                {[!autoReplyEnabled, !sequenceEnabled, !reviewRequestEnabled].filter(Boolean).length} not enabled
+              </span>
+            )}
+          </div>
           <div className="space-y-5">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -514,17 +561,22 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             </div>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
-            {["square", "stripe", "shopify", "hubspot"].map((p) => (
-              !integrations[p]?.connected && (
+            {[
+              { id: "square", label: "Square" },
+              { id: "clover", label: "Clover" },
+              { id: "stripe", label: "Stripe" },
+              { id: "hubspot", label: "HubSpot" },
+            ].map(({ id, label }) =>
+              !integrations[id]?.connected && (
                 <a
-                  key={p}
-                  href={`/api/oauth/${p}`}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted capitalize hover:text-content hover:border-content-muted transition-colors"
+                  key={id}
+                  href={`/api/oauth/${id}`}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted hover:text-content hover:border-content-muted transition-colors"
                 >
-                  + Connect {p}
+                  + Connect {label}
                 </a>
               )
-            ))}
+            )}
           </div>
         </div>
 
@@ -552,6 +604,9 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
                   </span>
                 )}
               </div>
+              <p className="rounded-btn border border-line bg-base px-4 py-2.5 text-xs text-content-muted">
+                Scaleva is working to recover revenue that exceeds your subscription cost — check your dashboard to see your ROI.
+              </p>
 
               {/* Usage bar */}
               {limits !== null ? (

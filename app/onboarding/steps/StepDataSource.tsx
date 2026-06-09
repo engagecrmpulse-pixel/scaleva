@@ -1,126 +1,229 @@
 "use client";
 
 import { cn } from "@/utils/helpers";
-import { DATA_SOURCES, type DataSource } from "../types";
+import { DATA_SOURCE_GROUPS, DATA_SOURCES, type DataSource, type DataSourceOption } from "../types";
 import type { StepProps } from "../Wizard";
 
-const SOURCE_IMPORT_DESCRIPTION: Record<DataSource, string> = {
-  square: "Names, phones, emails, order history, and spend amounts.",
-  stripe: "Paying customers, payment history, and lifetime value.",
-  shopify: "Store customers, orders, and purchase totals.",
-  toast: "Guests, visit frequency, and spend from your POS.",
-  hubspot: "CRM contacts, deal history, and engagement data.",
-  csv: "Any customer list you already have as a spreadsheet.",
-  manual: "Build your list from scratch one customer at a time.",
-};
+function downloadCsvTemplate() {
+  const header = "name,phone,email,last_purchase,spend_amount";
+  const examples = [
+    "Jane Smith,+15551234567,jane@example.com,2024-05-15,85.00",
+    "Carlos Mendez,+15559876543,carlos@example.com,2024-04-22,142.50",
+    "Priya Nair,+15551112222,priya@example.com,2024-05-01,60.00",
+  ].join("\n");
+  const csv = `${header}\n${examples}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "scaleva-customer-template.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-function DataSourceIcon({ id }: { id: DataSource }) {
-  const cls = "h-5 w-5";
-  switch (id) {
-    case "square":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <rect x="3" y="3" width="18" height="18" rx="3" strokeLinejoin="round" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6M12 9v6" />
-        </svg>
-      );
-    case "stripe":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-        </svg>
-      );
-    case "shopify":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
-        </svg>
-      );
-    case "toast":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 16.5a3 3 0 11-6 0M6 13.121V16.5a6 6 0 0012 0v-3.379" />
-        </svg>
-      );
-    case "hubspot":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
-        </svg>
-      );
-    case "csv":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-        </svg>
-      );
-    case "manual":
-      return (
-        <svg className={cls} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-        </svg>
-      );
-  }
+function IntegrationCard({
+  source,
+  selected,
+  onSelect,
+}: {
+  source: DataSourceOption;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const comingSoon = !source.live;
+
+  return (
+    <button
+      type="button"
+      onClick={comingSoon ? undefined : onSelect}
+      disabled={comingSoon}
+      className={cn(
+        "relative flex flex-col items-start rounded-card border p-3 text-left transition-all focus:outline-none",
+        comingSoon
+          ? "cursor-default border-line bg-base opacity-60"
+          : selected
+          ? "border-accent bg-accent/5 ring-1 ring-accent/30 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+          : "border-line bg-base hover:border-content-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+      )}
+      aria-pressed={selected}
+    >
+      {selected && (
+        <div className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent">
+          <svg className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          </svg>
+        </div>
+      )}
+      {comingSoon && (
+        <div className="absolute right-2 top-2 rounded-full bg-line px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-widest text-content-muted">
+          Soon
+        </div>
+      )}
+      <span className="text-lg leading-none">{source.icon}</span>
+      <span className="mt-2 text-xs font-semibold text-content">{source.name}</span>
+      {selected && source.pulls && (
+        <span className="mt-1 text-[10px] leading-relaxed text-accent/70">
+          Imports: {source.pulls}
+        </span>
+      )}
+    </button>
+  );
 }
 
 export function StepDataSource({ state, update }: StepProps) {
+  const csvSource = DATA_SOURCES.find((s) => s.id === "csv")!;
+  const manualSource = DATA_SOURCES.find((s) => s.id === "manual")!;
+  const selected = state.dataSource;
+
+  function select(id: DataSource) {
+    update({ dataSource: id, connected: false, customers: [] });
+  }
+
   return (
     <div>
       <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
         Where do your customers come from?
       </h2>
       <p className="mt-1.5 text-sm text-content-muted">
-        Pick a source to import your customer list. You can change this later.
+        Choose a source to import your customer list. CSV and Excel work with any system.
       </p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {DATA_SOURCES.map((source) => {
-          const selected = state.dataSource === source.id;
-          return (
-            <button
-              key={source.id}
-              type="button"
-              onClick={() => update({ dataSource: source.id, connected: false })}
-              className={cn(
-                "group relative flex flex-col items-start rounded-card border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base",
-                selected
-                  ? "border-accent bg-accent/5"
-                  : "border-line bg-base hover:border-content-muted"
-              )}
-              aria-pressed={selected}
-            >
-              {selected && (
-                <div className="absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full bg-accent">
-                  <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+      {/* ── Spreadsheet — most popular ──────────────────────────────────── */}
+      <div className="mt-6">
+        <div className="mb-2 flex items-center gap-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-content-muted">
+            Most popular
+          </p>
+          <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-400">
+            Works with Excel, Google Sheets & any CSV
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => select("csv")}
+          className={cn(
+            "group flex w-full items-center gap-4 rounded-card border p-4 text-left transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-base",
+            selected === "csv"
+              ? "border-accent bg-accent/5 ring-1 ring-accent/30"
+              : "border-line bg-base hover:border-content-muted"
+          )}
+          aria-pressed={selected === "csv"}
+        >
+          <div
+            className={cn(
+              "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-btn text-xl transition-colors",
+              selected === "csv" ? "bg-accent text-white" : "bg-surface text-content-muted group-hover:text-content"
+            )}
+          >
+            📊
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-content">Import a Spreadsheet</p>
+              {selected === "csv" && (
+                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-accent">
+                  <svg className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 </div>
               )}
-              <div
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-btn transition-colors",
-                  selected
-                    ? "bg-accent text-white"
-                    : "bg-surface text-content-muted group-hover:text-content"
-                )}
-              >
-                <DataSourceIcon id={source.id} />
-              </div>
-              <span className="mt-3 text-sm font-semibold text-content">
-                {source.name}
-              </span>
-              <span className="mt-0.5 text-xs leading-relaxed text-content-muted">
-                {source.description}
-              </span>
-              {selected && (
-                <p className="mt-2 text-xs text-accent/80 leading-snug">
-                  Imports: {SOURCE_IMPORT_DESCRIPTION[source.id]}
-                </p>
-              )}
+            </div>
+            <p className="mt-0.5 text-xs text-content-muted">
+              Upload a .csv or .xlsx file — export from Excel, Google Sheets, or any software that supports spreadsheet exports.
+            </p>
+            {selected === "csv" && (
+              <p className="mt-1 text-xs text-accent/80">
+                Imports: name, phone, email, last purchase date, spend amount.
+              </p>
+            )}
+          </div>
+          <div className="flex-shrink-0">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); downloadCsvTemplate(); }}
+              className="hidden items-center gap-1 rounded-btn border border-line px-2.5 py-1.5 text-xs font-medium text-content-muted transition-colors hover:border-content-muted hover:text-content group-hover:flex"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Template
             </button>
-          );
-        })}
+          </div>
+        </button>
+
+        {selected === "csv" && (
+          <div className="mt-2 flex items-center gap-2 px-1">
+            <button
+              type="button"
+              onClick={downloadCsvTemplate}
+              className="flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+            >
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              Download template
+            </button>
+            <span className="text-content-muted/40">·</span>
+            <span className="text-xs text-content-muted">Accepts .csv and .xlsx</span>
+          </div>
+        )}
       </div>
+
+      {/* ── Platform integrations grouped ────────────────────────────────── */}
+      <div className="mt-6 space-y-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-content-muted">
+          Or connect a platform
+        </p>
+
+        {DATA_SOURCE_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="mb-2 text-[11px] font-medium text-content-muted/70">{group.label}</p>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+              {group.sources.map((source) => (
+                <IntegrationCard
+                  key={source.id}
+                  source={source}
+                  selected={selected === source.id}
+                  onSelect={() => select(source.id)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Manual entry ─────────────────────────────────────────────────── */}
+      <div className="mt-5 border-t border-line pt-4">
+        <button
+          type="button"
+          onClick={() => select("manual")}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-btn border px-4 py-2.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+            selected === "manual"
+              ? "border-accent bg-accent/5"
+              : "border-line bg-base hover:border-content-muted"
+          )}
+        >
+          <span className="text-base">✍️</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-medium text-content">Add customers manually</p>
+            <p className="text-[11px] text-content-muted">Enter one at a time — good for a small starting list.</p>
+          </div>
+          {selected === "manual" && (
+            <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-accent">
+              <svg className="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+          )}
+        </button>
+      </div>
+
+      {selected && !DATA_SOURCES.find((s) => s.id === selected)?.live && (
+        <div className="mt-3 rounded-btn border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-xs text-yellow-400">
+          This integration is coming soon. In the meantime, use Spreadsheet import — export your customer list from {DATA_SOURCES.find((s) => s.id === selected)?.name} as a CSV file and upload it here.
+        </div>
+      )}
     </div>
   );
 }

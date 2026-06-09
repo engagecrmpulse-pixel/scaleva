@@ -1,4 +1,5 @@
 import Link from "next/link";
+import HeroPhone from "@/components/HeroPhone";
 
 export default function LandingPage() {
   return (
@@ -56,41 +57,8 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right: terminal */}
-          <div className="overflow-hidden rounded-card border border-line bg-surface font-mono text-xs">
-            <div className="flex items-center gap-1.5 border-b border-line px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-line" />
-              <span className="h-2.5 w-2.5 rounded-full bg-line" />
-              <span className="h-2.5 w-2.5 rounded-full bg-line" />
-            </div>
-            <div className="space-y-3 px-5 py-5 leading-relaxed">
-              <p>
-                <span className="text-content-muted">scaleva</span>{" "}
-                <span className="text-content-muted">~</span>{" "}
-                <span className="text-content">%</span>{" "}
-                <span className="text-content-muted">
-                  generate --customer &quot;Sarah M.&quot;
-                </span>
-              </p>
-              <div className="space-y-1 border-l border-line pl-4 text-content-muted">
-                <p>Customer: Sarah M.</p>
-                <p>Last visit: 47 days ago</p>
-                <p>Spent: $284.00</p>
-              </div>
-              <p className="text-content-muted">Writing message...</p>
-              <div className="rounded-btn border border-line bg-base px-4 py-3 text-content">
-                &ldquo;Hey Sarah! It&apos;s been a little while since your last
-                visit. We&apos;ve got a few new things we think you&apos;ll love.
-                Come say hi this week.&rdquo;
-              </div>
-              <p>
-                <span className="text-accent">✓</span>{" "}
-                <span className="text-content-muted">
-                  Queued &middot; Sending tonight at 6pm
-                </span>
-              </p>
-            </div>
-          </div>
+          {/* Right: SMS demo */}
+          <HeroPhone />
         </div>
       </section>
 

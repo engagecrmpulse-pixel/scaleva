@@ -56,6 +56,7 @@ export interface BusinessConfig {
   specialOffer?: string;
   bookingLink?: string;
   loyaltyProgram?: string;
+  monthlyRevenueGoal?: number;
   [key: string]: Json | undefined;
 }
 

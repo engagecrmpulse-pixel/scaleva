@@ -4,6 +4,7 @@ import type { BusinessConfig } from "@/utils/database.types";
 import { exchangeSquareToken, extractSquareCustomers } from "@/lib/oauth/square";
 import { exchangeStripeToken, extractStripeCustomers } from "@/lib/oauth/stripe";
 import { exchangeHubSpotToken, extractHubSpotCustomers } from "@/lib/oauth/hubspot";
+import { exchangeCloverToken, extractCloverCustomers } from "@/lib/oauth/clover";
 import type { ExtractedCustomer } from "@/lib/oauth/types";
 
 const APP_URL =
@@ -21,8 +22,10 @@ async function getAccessToken(
       return exchangeStripeToken(code);
     case "hubspot":
       return exchangeHubSpotToken(code, redirectUri);
+    case "clover":
+      return exchangeCloverToken(code, redirectUri);
     default:
-      return code; // passthrough for unimplemented providers
+      return code;
   }
 }
 
@@ -37,6 +40,8 @@ async function extractCustomers(
       return extractStripeCustomers(accessToken);
     case "hubspot":
       return extractHubSpotCustomers(accessToken);
+    case "clover":
+      return extractCloverCustomers(accessToken);
     default:
       return [];
   }

@@ -179,22 +179,49 @@ export function StepLaunch({ state, onBack, onClearStorage }: StepLaunchProps) {
         </div>
 
         <h2 className="mt-5 font-heading text-xl font-semibold tracking-tight text-content">
-          You&apos;re live!
+          {state.businessName} is live!
         </h2>
         <p className="mt-1.5 text-sm text-content-muted">
-          Taking you to your dashboard…
+          Scaleva is now monitoring your customers and building your retention engine.
         </p>
 
-        <div className="mt-6 w-full max-w-sm rounded-card border border-line bg-base p-5 text-left">
-          <SummaryRow label="Business" value={state.businessName} />
-          <SummaryRow label="Industry" value={state.industry} />
-          <SummaryRow label="Customers" value={String(state.customers.length)} />
-          {state.menuItems.filter((i) => i.name.trim()).length > 0 && (
-            <SummaryRow label="Items on file" value={String(state.menuItems.filter((i) => i.name.trim()).length)} />
-          )}
-          <SummaryRow label="Cadence" value={state.cadence} />
-          <SummaryRow label="First send" value={firstSendDate(state.cadence)} />
+        <div className="mt-6 grid w-full max-w-sm grid-cols-2 gap-3">
+          <div className="rounded-card border border-accent/20 bg-accent/5 p-4 text-center">
+            <p className="font-mono text-2xl font-bold text-accent">{state.customers.length}</p>
+            <p className="mt-0.5 text-xs text-content-muted">customers imported</p>
+          </div>
+          <div className="rounded-card border border-green-500/20 bg-green-500/5 p-4 text-center">
+            <p className="font-mono text-2xl font-bold text-green-400">{firstSendDate(state.cadence).split(",")[0]}</p>
+            <p className="mt-0.5 text-xs text-content-muted">first send</p>
+          </div>
         </div>
+
+        <div className="mt-4 w-full max-w-sm rounded-card border border-line bg-base p-4 text-left">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-content-muted">
+            What happens next
+          </p>
+          <div className="space-y-2.5">
+            {[
+              { label: "Your dashboard is ready to explore", desc: "See your customers, analytics, and controls" },
+              { label: "Enable autopilot to go hands-free", desc: "Scaleva will reach customers on your schedule" },
+              { label: `First outreach on ${firstSendDate(state.cadence)}`, desc: "AI-personalized messages for every customer" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-start gap-2.5">
+                <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-accent/15">
+                  <svg className="h-2.5 w-2.5 text-accent" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </span>
+                <div>
+                  <p className="text-xs font-medium text-content">{item.label}</p>
+                  <p className="text-[10px] text-content-muted">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs text-content-muted">Taking you to your dashboard…</p>
       </div>
     );
   }
