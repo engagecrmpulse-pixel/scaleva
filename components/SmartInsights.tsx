@@ -11,6 +11,7 @@ interface SmartInsightsProps {
   subscription: Subscription | null;
   atRiskCount: number;
   onEnableAutopilot?: () => void;
+  onViewCustomers?: () => void;
 }
 
 interface Insight {
@@ -62,6 +63,7 @@ export function SmartInsights({
   subscription,
   atRiskCount,
   onEnableAutopilot,
+  onViewCustomers,
 }: SmartInsightsProps) {
   const messagedIds = new Set(
     messages.filter((m) => m.direction === "outbound").map((m) => m.customer_id)
@@ -89,7 +91,7 @@ export function SmartInsights({
       title: `${uncontactedCount} customer${uncontactedCount !== 1 ? "s" : ""} haven't been reached`,
       body: "Activate Scaleva's retention engine — most businesses see 15–25% of messaged customers return within 30 days.",
       actionLabel: "View customers",
-      actionHref: "/dashboard",
+      onAction: onViewCustomers,
     });
   }
 

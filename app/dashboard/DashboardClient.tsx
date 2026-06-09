@@ -979,6 +979,46 @@ export function DashboardClient({
           </div>
 
           <div className="flex-1 overflow-y-auto">
+            {/* Revenue banner */}
+            {(recoveryStats.allTimeRevenue > 0 || revenueTracked > 0) && (
+              <div className={`border-b px-6 py-3 ${recoveryStats.allTimeRevenue > 0 ? "border-green-500/15 bg-green-500/[0.06]" : "border-accent/10 bg-accent/[0.04]"}`}>
+                <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm ${recoveryStats.allTimeRevenue > 0 ? "bg-green-500/20 text-green-400" : "bg-accent/15 text-accent"}`}>
+                      {recoveryStats.allTimeRevenue > 0 ? "↑" : "·"}
+                    </span>
+                    <p className="text-sm text-content truncate">
+                      {recoveryStats.allTimeRevenue > 0 ? (
+                        <>
+                          Scaleva has put{" "}
+                          <span className="font-semibold text-green-400">{formatCurrency(recoveryStats.allTimeRevenue)}</span>
+                          {" "}back into your business
+                          {recoveryStats.thisMonthRevenue > 0 && (
+                            <span className="ml-2 text-xs text-content-muted">
+                              +{formatCurrency(recoveryStats.thisMonthRevenue)} this month
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          Scaleva is monitoring{" "}
+                          <span className="font-semibold text-accent">{formatCurrency(revenueTracked)}</span>
+                          {" "}in customer value across {customers.length} customer{customers.length !== 1 ? "s" : ""}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  {recoveryStats.allTimeRevenue > 0 && (
+                    <div className="hidden flex-shrink-0 items-center gap-4 text-xs text-content-muted sm:flex">
+                      <span>{recoveryStats.allTimeCustomers} customer{recoveryStats.allTimeCustomers !== 1 ? "s" : ""} won back</span>
+                      <span className="opacity-30">·</span>
+                      <span>{returnVisitRate}% return rate</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="mx-auto max-w-5xl px-6 py-8">
               <AccountHealthScore
                 config={config}
@@ -1006,6 +1046,9 @@ export function DashboardClient({
                 subscription={subscription}
                 atRiskCount={atRiskCount}
                 onEnableAutopilot={toggleAutopilot}
+                onViewCustomers={() => {
+                  document.getElementById("customers-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
               />
 
               {/* Stats */}
@@ -1036,7 +1079,7 @@ export function DashboardClient({
                 <StatCard label="Return visit rate" value={`${returnVisitRate}%`} />
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-3">
+              <div id="customers-section" className="grid gap-5 lg:grid-cols-3">
                 {/* Customers table */}
                 <div className="overflow-hidden rounded-card border border-line bg-surface lg:col-span-2">
                   <div className="flex items-center justify-between border-b border-line px-6 py-4">
