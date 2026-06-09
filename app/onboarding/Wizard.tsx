@@ -25,8 +25,13 @@ const STEP_LABELS = ["Data source", "Connect", "Business", "Profile", "Preview",
 
 function canAdvance(step: number, state: WizardState): boolean {
   switch (step) {
-    case 1:
-      return state.dataSource !== null;
+    case 1: {
+      if (!state.dataSource) return false;
+      const src = DATA_SOURCES.find((s) => s.id === state.dataSource);
+      // Block coming-soon providers — they have no live connection path
+      if (src && !src.live) return false;
+      return true;
+    }
     case 2: {
       const source = DATA_SOURCES.find((s) => s.id === state.dataSource);
       if (!source) return false;
@@ -187,49 +192,55 @@ export function Wizard({ initialStep = 1, initialState }: WizardProps) {
         </div>
 
         {step < TOTAL_STEPS && (
-          <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
-            <button
-              type="button"
-              onClick={back}
-              disabled={step === 1}
-              className="inline-flex h-9 items-center gap-1.5 rounded-btn px-3 text-sm font-medium text-content-muted transition-colors hover:bg-base hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
+          <div className="mt-8 border-t border-line pt-6">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={back}
+                disabled={step === 1}
+                className="inline-flex h-9 items-center gap-1.5 rounded-btn px-3 text-sm font-medium text-content-muted transition-colors hover:bg-base hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-                />
-              </svg>
-              Back
-            </button>
-            <button
-              type="button"
-              onClick={next}
-              disabled={!canAdvance(step, state)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Continue
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                />
-              </svg>
-            </button>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                </svg>
+                Back
+              </button>
+              <div className="flex items-center gap-3">
+                {/* Step 4 (Business Profile) is optional — show explicit skip */}
+                {step === 4 && (
+                  <button
+                    type="button"
+                    onClick={next}
+                    className="text-sm text-content-muted hover:text-content transition-colors"
+                  >
+                    Skip for now
+                  </button>
+                )}
+                {/* Step 1: if a coming-soon provider is selected, explain why Continue is disabled */}
+                {step === 1 && state.dataSource && !DATA_SOURCES.find((s) => s.id === state.dataSource)?.live && (
+                  <span className="text-xs text-yellow-500/80">
+                    Choose CSV to continue
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={!canAdvance(step, state)}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-btn bg-accent px-5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Continue
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {/* Step 4 optional hint */}
+            {step === 4 && (
+              <p className="mt-3 text-center text-xs text-content-muted/60">
+                This step is optional — you can fill it in later from Settings
+              </p>
+            )}
           </div>
         )}
       </div>

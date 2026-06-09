@@ -354,7 +354,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
         </div>
 
         {/* AI instructions */}
-        <div className={sectionClass}>
+        <div id="ai-instructions" className={sectionClass}>
           <div className="mb-4 flex items-start justify-between gap-4">
             <div>
               <h2 className={sectionHeaderClass}>AI instructions</h2>
@@ -391,7 +391,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
         </div>
 
         {/* AI Features */}
-        <div className={sectionClass}>
+        <div id="ai-features" className={sectionClass}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className={sectionHeaderClass} style={{ marginBottom: 0 }}>AI features</h2>
             {(!autoReplyEnabled || !sequenceEnabled || !reviewRequestEnabled) && (
@@ -424,7 +424,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
               </button>
             </div>
 
-            <div className="flex items-start justify-between gap-4">
+            <div id="win-back" className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-content">Win-back sequences</p>
                 <p className="mt-0.5 text-xs text-content-muted">
@@ -447,7 +447,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
               </button>
             </div>
 
-            <div>
+            <div id="reviews">
               <div className="mb-3 flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-content">Google review requests</p>
@@ -535,7 +535,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
         </div>
 
         {/* Integrations */}
-        <div className={sectionClass}>
+        <div id="integrations" className={sectionClass}>
           <h2 className={sectionHeaderClass}>Integrations</h2>
           {Object.keys(integrations).length === 0 ? (
             <p className="text-sm text-content-muted">No integrations connected yet.</p>

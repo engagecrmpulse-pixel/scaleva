@@ -10,6 +10,8 @@ interface AccountHealthScoreProps {
   customerCount: number;
   messagesSent: number;
   onEnableAutopilot?: () => void;
+  onAddCustomer?: () => void;
+  onSendFirstMessage?: () => void;
 }
 
 interface HealthItem {
@@ -28,6 +30,8 @@ export function AccountHealthScore({
   customerCount,
   messagesSent,
   onEnableAutopilot,
+  onAddCustomer,
+  onSendFirstMessage,
 }: AccountHealthScoreProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -37,11 +41,11 @@ export function AccountHealthScore({
   const items: HealthItem[] = [
     {
       label: "Customers imported",
-      description: "Your customer list is the foundation of retention — import to get started.",
+      description: "Your customer list is the foundation of retention — import from a spreadsheet or connect an integration.",
       done: customerCount > 0,
       points: 20,
       actionLabel: "Add customers",
-      actionHref: "/dashboard",
+      onAction: onAddCustomer,
     },
     {
       label: "Autopilot enabled",
@@ -53,18 +57,19 @@ export function AccountHealthScore({
     },
     {
       label: "First message sent",
-      description: "Activate your outreach and start recovering revenue today.",
+      description: "Select any customer and hit Send to generate and send your first AI-personalized message.",
       done: messagesSent > 0,
       points: 15,
-      actionLabel: "Send a message",
+      actionLabel: "Go to customers",
+      onAction: onSendFirstMessage,
     },
     {
       label: "Integration connected",
-      description: "Sync customers automatically from Square, Stripe, Shopify, or HubSpot.",
+      description: "Sync customers automatically from Square, Clover, Stripe, or HubSpot — no manual imports.",
       done: hasIntegration,
       points: 15,
-      actionLabel: "Connect integration",
-      actionHref: "/settings",
+      actionLabel: "Connect an integration",
+      actionHref: "/settings#integrations",
     },
     {
       label: "Win-back sequences enabled",
@@ -72,15 +77,15 @@ export function AccountHealthScore({
       done: config.sequenceEnabled === true,
       points: 15,
       actionLabel: "Enable sequences",
-      actionHref: "/settings",
+      actionHref: "/settings#win-back",
     },
     {
       label: "AI instructions customized",
       description: "Tell the AI your brand rules, active offers, and voice for better messages.",
       done: !!(config.customInstructions?.trim()),
       points: 10,
-      actionLabel: "Add instructions",
-      actionHref: "/settings",
+      actionLabel: "Customize AI",
+      actionHref: "/settings#ai-instructions",
     },
     {
       label: "Review requests configured",
@@ -88,7 +93,7 @@ export function AccountHealthScore({
       done: config.reviewRequestEnabled === true && !!(config.reviewLink as string | undefined),
       points: 5,
       actionLabel: "Set up reviews",
-      actionHref: "/settings",
+      actionHref: "/settings#reviews",
     },
   ];
 
@@ -114,13 +119,8 @@ export function AccountHealthScore({
             <svg className="h-11 w-11 -rotate-90" viewBox="0 0 40 40">
               <circle cx="20" cy="20" r="16" fill="none" stroke="#2A2D35" strokeWidth="3.5" />
               <circle
-                cx="20"
-                cy="20"
-                r="16"
-                fill="none"
-                stroke={scoreColor}
-                strokeWidth="3.5"
-                strokeDasharray={circumference}
+                cx="20" cy="20" r="16" fill="none" stroke={scoreColor}
+                strokeWidth="3.5" strokeDasharray={circumference}
                 strokeDashoffset={circumference - (score / 100) * circumference}
                 strokeLinecap="round"
                 style={{ transition: "stroke-dashoffset 0.8s ease" }}
@@ -129,9 +129,7 @@ export function AccountHealthScore({
             <span className="absolute font-mono text-[11px] font-bold text-content">{score}</span>
           </div>
           <div className="text-left">
-            <p className="text-sm font-semibold text-content">
-              Setup score — {score}%
-            </p>
+            <p className="text-sm font-semibold text-content">Setup score — {score}%</p>
             <p className="mt-0.5 text-xs text-content-muted">
               {pendingItems.length === 1
                 ? "1 step left to maximize your results"
@@ -151,10 +149,7 @@ export function AccountHealthScore({
           </div>
           <svg
             className={`h-4 w-4 text-content-muted transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
@@ -175,13 +170,7 @@ export function AccountHealthScore({
                   }`}
                 >
                   {item.done ? (
-                    <svg
-                      className="h-3 w-3 text-green-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="h-3 w-3 text-green-400" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                     </svg>
                   ) : (
@@ -202,13 +191,22 @@ export function AccountHealthScore({
                       <button
                         type="button"
                         onClick={item.onAction}
-                        className="text-xs font-medium text-accent hover:underline"
+                        className="inline-flex items-center gap-1 rounded-btn border border-accent/30 bg-accent/5 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
                       >
-                        {item.actionLabel} →
+                        {item.actionLabel}
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
                       </button>
                     ) : item.actionHref ? (
-                      <Link href={item.actionHref} className="text-xs font-medium text-accent hover:underline">
-                        {item.actionLabel} →
+                      <Link
+                        href={item.actionHref}
+                        className="inline-flex items-center gap-1 rounded-btn border border-accent/30 bg-accent/5 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+                      >
+                        {item.actionLabel}
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                        </svg>
                       </Link>
                     ) : null}
                   </div>

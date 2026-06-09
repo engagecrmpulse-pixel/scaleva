@@ -162,7 +162,7 @@ function OAuthConnect({ state, update }: StepProps) {
               Click below to authorize Scaleva to read your {source.name}{" "}
               customers, purchase history, and spend data.
             </p>
-            <div className="mt-5 flex flex-col items-center gap-2">
+            <div className="mt-5 flex flex-col items-center gap-3">
               <a
                 href={oauthUrl}
                 className="inline-flex h-9 items-center gap-2 rounded-btn bg-accent px-5 text-sm font-medium text-white hover:bg-accent-hover transition-colors"
@@ -171,10 +171,10 @@ function OAuthConnect({ state, update }: StepProps) {
               </a>
               <button
                 type="button"
-                className="text-xs text-content-muted hover:text-content"
+                className="inline-flex h-8 items-center rounded-btn border border-line px-4 text-xs font-medium text-content-muted hover:border-content-muted hover:text-content transition-colors"
                 onClick={() => update({ connected: true })}
               >
-                Skip for now (connect from dashboard later)
+                Skip — I'll connect from settings later
               </button>
             </div>
           </>

@@ -4,26 +4,45 @@ import { useCallback, useEffect, useState } from "react";
 import type { OutreachParams } from "@/lib/claude";
 import type { StepProps } from "../Wizard";
 
-const DEMO_CUSTOMER = {
-  name: "Alex Johnson",
-  lastPurchase: "2 weeks ago",
-  spent: "$45.00",
-  // ISO-ish for the API
-  lastPurchaseDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+interface DemoCustomer {
+  name: string;
+  initials: string;
+  lastPurchase: string;
+  spent: string;
+  daysSince: number;
+  detail: string;
+}
+
+const INDUSTRY_CUSTOMERS: Record<string, DemoCustomer> = {
+  Restaurant: { name: "Maria Santos", initials: "MS", lastPurchase: "7 weeks ago", spent: "$284", daysSince: 49, detail: "6 visits · usually orders pasta · dines on Fridays" },
+  Salon: { name: "Jennifer Kim", initials: "JK", lastPurchase: "8 weeks ago", spent: "$610", daysSince: 56, detail: "9 visits · balayage client · 6–8 week refresh cycle" },
+  Retail: { name: "Ashley Moore", initials: "AM", lastPurchase: "6 weeks ago", spent: "$340", daysSince: 42, detail: "4 orders · athleisure preference · referred 1 friend" },
+  Fitness: { name: "Brandon Lee", initials: "BL", lastPurchase: "10 weeks ago", spent: "$480", daysSince: 70, detail: "monthly member · HIIT classes · 3× per week" },
+  Healthcare: { name: "Robert Davis", initials: "RD", lastPurchase: "11 months ago", spent: "$820", daysSince: 335, detail: "annual patient · last visit was annual physical" },
+  "Home Services": { name: "Robert Dixon", initials: "RD", lastPurchase: "11 months ago", spent: "$820", daysSince: 335, detail: "annual HVAC tune-up customer · AC unit 6 years old" },
 };
 
+const DEFAULT_CUSTOMER: DemoCustomer = { name: "Alex Johnson", initials: "AJ", lastPurchase: "6 weeks ago", spent: "$145", daysSince: 42, detail: "repeat customer · hasn't visited in a while" };
+
+function getDemoCustomer(industry: string): DemoCustomer {
+  return INDUSTRY_CUSTOMERS[industry] ?? DEFAULT_CUSTOMER;
+}
+
 function buildDemoParams(state: StepProps["state"]): OutreachParams {
+  const demo = getDemoCustomer(state.industry);
   const goal = state.goals.length > 0 ? state.goals.join(", ") : "re-engage the customer";
+  const lastPurchaseDate = new Date(Date.now() - demo.daysSince * 86_400_000).toISOString().slice(0, 10);
   const parts = [
-    `Lifetime spend: ${DEMO_CUSTOMER.spent}`,
-    `Last purchase: ${DEMO_CUSTOMER.lastPurchaseDate}`,
-    `Days since last visit: 14`,
+    `Lifetime spend: ${demo.spent}`,
+    `Last purchase: ${lastPurchaseDate}`,
+    `Days since last visit: ${demo.daysSince}`,
+    `Customer context: ${demo.detail}`,
   ];
   if (state.customInstructions.trim()) {
     parts.push(`Extra instructions: ${state.customInstructions.trim()}`);
   }
   return {
-    customerName: DEMO_CUSTOMER.name,
+    customerName: demo.name,
     businessName: state.businessName || "your business",
     industry: state.industry,
     voice: state.voice,
@@ -35,6 +54,7 @@ function buildDemoParams(state: StepProps["state"]): OutreachParams {
 export function StepPreview({ state, update }: StepProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const demo = getDemoCustomer(state.industry);
 
   const generate = useCallback(async () => {
     const preview = buildDemoParams(state);
@@ -76,28 +96,25 @@ export function StepPreview({ state, update }: StepProps) {
         {/* Demo customer card */}
         <div className="rounded-card border border-line bg-base p-5">
           <p className="mb-3 text-[10px] font-medium uppercase tracking-widest text-content-muted">
-            Sample customer
+            Sample customer · {state.industry}
           </p>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
-              AJ
+              {demo.initials}
             </div>
             <div>
-              <p className="font-medium text-content">{DEMO_CUSTOMER.name}</p>
+              <p className="font-medium text-content">{demo.name}</p>
               <p className="text-xs text-content-muted">
-                Last visit: {DEMO_CUSTOMER.lastPurchase} &middot; Spent {DEMO_CUSTOMER.spent}
+                Last visit: {demo.lastPurchase} · Spent {demo.spent}
               </p>
             </div>
           </div>
+          <p className="mt-3 text-xs text-content-muted italic">{demo.detail}</p>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2 border-t border-line pt-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-content-muted">Business</span>
               <span className="text-xs font-medium text-content">{state.businessName || "your business"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-content-muted">Industry</span>
-              <span className="text-xs font-medium text-content">{state.industry}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs text-content-muted">Voice</span>

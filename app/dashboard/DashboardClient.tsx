@@ -1026,6 +1026,16 @@ export function DashboardClient({
                 customerCount={customers.length}
                 messagesSent={messagesSent}
                 onEnableAutopilot={toggleAutopilot}
+                onAddCustomer={() => {
+                  setDraft(emptyDraft());
+                  setAddError(null);
+                  setAddDuplicateWarning(null);
+                  setConsentChecked(false);
+                  setAddOpen(true);
+                }}
+                onSendFirstMessage={() => {
+                  document.getElementById("customers-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
               />
 
               <RecoveryHero
