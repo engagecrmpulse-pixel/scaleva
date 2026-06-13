@@ -40,6 +40,22 @@ interface SquareLocation {
   status?: string;
 }
 
+interface SquareCatalogObject {
+  id: string;
+  type: string;
+  item_data?: {
+    name?: string;
+    category_id?: string;
+    description?: string;
+    variations?: Array<{
+      item_variation_data?: {
+        price_money?: { amount?: number; currency?: string };
+      };
+    }>;
+  };
+  category_data?: { name?: string };
+}
+
 function sanitizePhone(raw: string | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
@@ -139,6 +155,25 @@ async function fetchOrdersForLocation(
     cursor = data.cursor as string;
   }
   return orders;
+}
+
+async function fetchSquareCatalog(token: string): Promise<SquareCatalogObject[]> {
+  const objects: SquareCatalogObject[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < 20; page++) {
+    const url = new URL("https://connect.squareup.com/v2/catalog/list");
+    url.searchParams.set("types", "ITEM,CATEGORY");
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${token}`, "Square-Version": SQUARE_VERSION },
+    });
+    if (!res.ok) break;
+    const data = await res.json();
+    objects.push(...((data.objects as SquareCatalogObject[]) ?? []));
+    if (!data.cursor) break;
+    cursor = data.cursor as string;
+  }
+  return objects;
 }
 
 export async function GET(request: NextRequest) {
@@ -244,7 +279,6 @@ export async function GET(request: NextRequest) {
       const avg_order_value =
         visit_count > 0 ? Math.round((total_spend / visit_count) * 100) / 100 : 0;
 
-      // Top 3 most ordered items by frequency
       const itemCounts = new Map<string, number>();
       for (const o of custOrders) {
         for (const li of o.line_items ?? []) {
@@ -263,8 +297,7 @@ export async function GET(request: NextRequest) {
 
       return {
         business_id: business.id,
-        name:
-          [c.given_name, c.family_name].filter(Boolean).join(" ") || "Guest",
+        name: [c.given_name, c.family_name].filter(Boolean).join(" ") || "Guest",
         phone: sanitizePhone(c.phone_number),
         email: c.email_address ?? null,
         last_purchase,
@@ -286,6 +319,89 @@ export async function GET(request: NextRequest) {
     if (!upsertError) customersSynced += rows.length;
   }
 
+  // ── Catalog sync ─────────────────────────────────────────────────────────
+  // Build item-level analytics from all orders
+  interface ItemStats {
+    timesOrdered: number;
+    totalRevenue: number;
+    customerIds: string[];
+    lastOrdered: string;
+  }
+  const itemStatsMap = new Map<string, ItemStats>();
+  for (const order of allOrders) {
+    for (const li of order.line_items ?? []) {
+      if (!li.name) continue;
+      const existing: ItemStats = itemStatsMap.get(li.name) ?? {
+        timesOrdered: 0,
+        totalRevenue: 0,
+        customerIds: [],
+        lastOrdered: order.created_at,
+      };
+      existing.timesOrdered += Math.max(1, parseInt(li.quantity ?? "1") || 1);
+      existing.totalRevenue += (li.total_money?.amount ?? 0) / 100;
+      if (order.customer_id) existing.customerIds.push(order.customer_id);
+      if (new Date(order.created_at) > new Date(existing.lastOrdered)) {
+        existing.lastOrdered = order.created_at;
+      }
+      itemStatsMap.set(li.name, existing);
+    }
+  }
+
+  const catalogObjects = await fetchSquareCatalog(accessToken).catch(() => [] as SquareCatalogObject[]);
+
+  // Category id → name
+  const categoryMap = new Map<string, string>();
+  for (const obj of catalogObjects) {
+    if (obj.type === "CATEGORY" && obj.category_data?.name) {
+      categoryMap.set(obj.id, obj.category_data.name);
+    }
+  }
+
+  const menuItems = catalogObjects.filter(
+    (obj) => obj.type === "ITEM" && obj.item_data?.name
+  );
+
+  let menuItemsSynced = 0;
+  const categorySet = new Set<string>();
+
+  for (let i = 0; i < menuItems.length; i += 50) {
+    const batch = menuItems.slice(i, i + 50);
+    const rows = batch.map((obj) => {
+      const name = obj.item_data!.name!;
+      const catId = obj.item_data?.category_id;
+      const category = catId ? (categoryMap.get(catId) ?? null) : null;
+      if (category) categorySet.add(category);
+      const priceAmt = obj.item_data?.variations?.[0]?.item_variation_data?.price_money?.amount;
+      const price = priceAmt !== undefined ? priceAmt / 100 : null;
+      const stats = itemStatsMap.get(name);
+      const uniqueCustCount = stats
+        ? Array.from(new Set(stats.customerIds)).length
+        : 0;
+
+      return {
+        business_id: business.id,
+        square_item_id: obj.id,
+        name,
+        category,
+        price,
+        description: obj.item_data?.description ?? null,
+        active: true,
+        sort_order: 0,
+        times_ordered: stats?.timesOrdered ?? 0,
+        total_revenue: stats ? Math.round(stats.totalRevenue * 100) / 100 : 0,
+        unique_customers: uniqueCustCount,
+        last_ordered: stats?.lastOrdered ?? null,
+      };
+    });
+
+    const { error: menuErr } = await supabase
+      .from("menu_items")
+      .upsert(rows, { onConflict: "business_id,square_item_id" });
+
+    if (!menuErr) menuItemsSynced += rows.length;
+  }
+
+  // ── Update business config ────────────────────────────────────────────────
   const integrations = existingConfig.integrations ?? {};
   const oauthTokens = existingConfig.oauthTokens ?? {};
   oauthTokens.square = accessToken;
@@ -293,6 +409,8 @@ export async function GET(request: NextRequest) {
     connected: true,
     lastSync: new Date().toISOString(),
     customersSynced,
+    menuItemsSynced,
+    menuCategories: categorySet.size,
   };
 
   await supabase

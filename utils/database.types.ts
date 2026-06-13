@@ -26,7 +26,7 @@ export interface BusinessConfig {
   autopilotSendDay?: string;
   autopilotSendTime?: string;
   autopilotTimezone?: string;
-  integrations?: Record<string, { connected: boolean; lastSync?: string; customersSynced?: number }>;
+  integrations?: Record<string, { connected: boolean; lastSync?: string; customersSynced?: number; menuItemsSynced?: number; menuCategories?: number }>;
   oauthTokens?: Record<string, string>;
   emailNotifyReply?: boolean;
   emailNotifyFailed?: boolean;
@@ -297,6 +297,11 @@ export interface Database {
           active: boolean;
           sort_order: number;
           created_at: string;
+          square_item_id: string | null;
+          times_ordered: number;
+          total_revenue: number;
+          unique_customers: number;
+          last_ordered: string | null;
         };
         Insert: {
           id?: string;
@@ -308,6 +313,11 @@ export interface Database {
           active?: boolean;
           sort_order?: number;
           created_at?: string;
+          square_item_id?: string | null;
+          times_ordered?: number;
+          total_revenue?: number;
+          unique_customers?: number;
+          last_ordered?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["menu_items"]["Insert"]>;
         Relationships: [];

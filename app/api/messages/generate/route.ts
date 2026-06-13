@@ -144,7 +144,10 @@ function buildSystemPrompt(
   favoriteItems: string[],
   customerSince: string | null | undefined,
   birthday: string | null | undefined,
-  visitCount: number
+  visitCount: number,
+  favIsTopSeller: boolean,
+  suggestNew: string | null,
+  topSellerNames: string[]
 ): string {
   const firstName = customerName.split(" ")[0];
   const season = currentSeason();
@@ -165,9 +168,18 @@ function buildSystemPrompt(
   if (ind === "restaurant") {
     const freqNote = freqDays ? `usually every ${freqDays} days — ${isOverdue ? "they are overdue" : "on schedule"}` : "";
     const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days ago` : "";
+    const favConfident = favIsTopSeller && favoriteItems.length > 0
+      ? `Their favorite, ${favoriteItems[0]}, is one of our best sellers — mention it confidently. `
+      : "";
     const favNote = favoriteItems.length > 0
       ? `Favorite dishes: ${favoriteItems.join(", ")}.`
       : lastItems ? `Last ordered: ${lastItems}.` : allItems ? `Recent orders: ${allItems}.` : "";
+    const newSuggestion = suggestNew
+      ? `Consider mentioning ${suggestNew} as something new to try. `
+      : "";
+    const topSellersNote = topSellerNames.length > 0
+      ? `Current best sellers: ${topSellerNames.slice(0, 3).join(", ")}. `
+      : "";
     const tenure = tenureLabel(customerSince);
     const birthdayNote = isBirthdaySoon(birthday) ? "Their birthday is within the next 7 days — wish them happy birthday naturally. " : "";
     const isVIP = visitCount >= 10 || totalSpendAmount >= 500;
@@ -175,9 +187,10 @@ function buildSystemPrompt(
     industryPrompt =
       `Write a personal SMS from the owner of ${businessName}. ` +
       `${firstName} last visited ${daysNote}${freqNote ? ` (${freqNote})` : ""}. ` +
-      `${favNote} ${vipNote}Avg spend $${avgSpendAmount.toFixed(2)}. Lifetime $${totalSpendAmount.toFixed(2)}. ` +
+      `${favNote} ${favConfident}${vipNote}Avg spend $${avgSpendAmount.toFixed(2)}. Lifetime $${totalSpendAmount.toFixed(2)}. ` +
       `${tenure ? `They have been a guest for ${tenure}. ` : ""}` +
       `${birthdayNote}` +
+      `${topSellersNote}${newSuggestion}` +
       `${hasLoyalty ? "Mention a loyalty perk or reward. " : ""}` +
       `${personalityInstructions} Never sound like marketing.`;
   } else if (ind === "salon") {
@@ -363,12 +376,56 @@ export async function POST(request: NextRequest) {
       customOpener: (config.aiCustomOpener as string) ?? (config.customInstructions as string) ?? "",
     };
 
-    // Fetch best reply hour for this customer
-    const { data: insights } = await supabase
-      .from("customer_insights")
-      .select("best_reply_hour")
-      .eq("customer_id", customer.id)
-      .maybeSingle();
+    // Fetch best reply hour + menu items in parallel
+    const [{ data: insights }, { data: menuItemRows }] = await Promise.all([
+      supabase
+        .from("customer_insights")
+        .select("best_reply_hour")
+        .eq("customer_id", customer.id)
+        .maybeSingle(),
+      supabase
+        .from("menu_items")
+        .select("name, category, times_ordered, total_revenue, last_ordered")
+        .eq("business_id", customer.business_id)
+        .eq("active", true)
+        .order("times_ordered", { ascending: false })
+        .limit(30),
+    ]);
+
+    // Compute menu-aware context for AI
+    const menuRows = menuItemRows ?? [];
+    const totalOrders = menuRows.reduce((s, m) => s + (m.times_ordered ?? 0), 0);
+    const topSellerNames = menuRows
+      .filter((m) => (m.times_ordered ?? 0) > 0)
+      .slice(0, 5)
+      .map((m) => m.name);
+    const bottomThreshold = totalOrders > 0
+      ? (totalOrders / Math.max(menuRows.length, 1)) * 0.2
+      : 0;
+    const underperformingByCategory: Record<string, string[]> = {};
+    for (const m of menuRows) {
+      if ((m.times_ordered ?? 0) < bottomThreshold && m.category) {
+        const arr = underperformingByCategory[m.category] ?? [];
+        arr.push(m.name);
+        underperformingByCategory[m.category] = arr;
+      }
+    }
+    const favIsTopSeller = favoriteItems.some((f) => topSellerNames.includes(f));
+    const suggestNew = !favIsTopSeller && favoriteItems.length > 0
+      ? (() => {
+          const custCategories = new Set(
+            favoriteItems.flatMap((fav) => {
+              const item = menuRows.find((m) => m.name === fav);
+              return item?.category ? [item.category] : [];
+            })
+          );
+          for (const cat of Array.from(custCategories)) {
+            const under = underperformingByCategory[cat];
+            if (under?.length) return under[0];
+          }
+          return null;
+        })()
+      : null;
 
     const systemPrompt = buildSystemPrompt(
       business.industry ?? "small business",
@@ -383,7 +440,10 @@ export async function POST(request: NextRequest) {
       favoriteItems,
       customer.customer_since,
       customer.birthday,
-      visitCount
+      visitCount,
+      favIsTopSeller,
+      suggestNew,
+      topSellerNames
     );
 
     const firstName = customer.name.split(" ")[0];

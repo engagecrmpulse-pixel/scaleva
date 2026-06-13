@@ -540,16 +540,29 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
           ) : (
             <div className="space-y-3">
               {Object.entries(integrations).map(([provider, info]) => (
-                <div key={provider} className="flex items-center justify-between rounded-btn border border-line px-4 py-3">
+                <div key={provider} className="flex items-start justify-between rounded-btn border border-line px-4 py-3">
                   <div>
                     <span className="text-sm font-medium capitalize text-content">{provider}</span>
                     <p className="text-xs text-content-muted">
                       {info.customersSynced !== undefined
-                        ? `${info.customersSynced} customers synced`
+                        ? `${info.customersSynced} guests synced`
                         : info.lastSync
                         ? `Last synced ${new Date(info.lastSync).toLocaleString()}`
                         : "Connected"}
                     </p>
+                    {info.menuItemsSynced !== undefined && info.menuItemsSynced > 0 && (
+                      <p className="mt-0.5 text-xs text-content-muted">
+                        Menu synced: {info.menuItemsSynced} items
+                        {info.menuCategories && info.menuCategories > 0
+                          ? ` across ${info.menuCategories} categories`
+                          : ""}
+                      </p>
+                    )}
+                    {info.lastSync && (
+                      <p className="mt-0.5 text-[10px] text-content-muted/60">
+                        Last sync {new Date(info.lastSync).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-400">
                     Connected

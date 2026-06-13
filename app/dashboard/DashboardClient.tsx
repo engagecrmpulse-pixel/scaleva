@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
 } from "recharts";
 import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/Badge";
@@ -776,6 +777,41 @@ export function DashboardClient({
       return { ...item, positive, negative, neutral, total, score };
     }).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
   }, [menuItems, menuMentions]);
+
+  const hasOrderAnalytics = useMemo(
+    () => menuItems.some((m) => m.times_ordered > 0),
+    [menuItems]
+  );
+
+  const topByOrders = useMemo(
+    () => menuItems.slice().sort((a, b) => b.times_ordered - a.times_ordered).slice(0, 5),
+    [menuItems]
+  );
+
+  const topByRevenue = useMemo(
+    () => menuItems.slice().sort((a, b) => b.total_revenue - a.total_revenue).slice(0, 5),
+    [menuItems]
+  );
+
+  const staleDishes = useMemo(() => {
+    const cutoff = Date.now() - 30 * 86_400_000;
+    return menuItems
+      .filter((m) => m.last_ordered && new Date(m.last_ordered).getTime() < cutoff)
+      .sort((a, b) => new Date(a.last_ordered!).getTime() - new Date(b.last_ordered!).getTime())
+      .slice(0, 8);
+  }, [menuItems]);
+
+  const categoryRevenue = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const item of menuItems) {
+      const cat = item.category ?? "Other";
+      map[cat] = (map[cat] ?? 0) + item.total_revenue;
+    }
+    return Object.entries(map)
+      .filter(([, rev]) => rev > 0)
+      .map(([name, revenue]) => ({ name, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+  }, [menuItems]);
 
   const msgLimit = subscription?.plan === "enterprise" ? null : (PLAN_LIMITS[subscription?.plan ?? "starter"] ?? 2000);
   const custLimit = subscription?.plan === "enterprise" ? null : (subscription?.customer_limit ?? null);
@@ -1599,6 +1635,129 @@ export function DashboardClient({
                       <p className="text-xs text-content-muted">
                         Mention data will appear here as guests reply to your messages and reference your dishes.
                       </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Menu Insights — Square order analytics */}
+              {hasOrderAnalytics && (
+                <div className="mt-5 rounded-card border border-line bg-surface p-5">
+                  <div className="mb-4">
+                    <h3 className="font-heading text-sm font-semibold text-content">Menu Insights</h3>
+                    <p className="mt-0.5 text-xs text-content-muted">Order analytics pulled from Square</p>
+                  </div>
+
+                  {/* Top 5 best sellers */}
+                  {topByOrders.length > 0 && (
+                    <div className="mb-5">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted/60">
+                        Best sellers — by orders
+                      </p>
+                      <ResponsiveContainer width="100%" height={140}>
+                        <BarChart data={topByOrders} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
+                          <XAxis type="number" tick={{ fontSize: 10, fill: "#6B7280" }} axisLine={false} tickLine={false} />
+                          <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#9CA3AF" }} width={110} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{ background: "#1A1D23", border: "1px solid #2A2D35", borderRadius: 6, fontSize: 11 }}
+                            formatter={(v: unknown) => [`${v} orders`, ""]}
+                          />
+                          <Bar dataKey="times_ordered" fill="#3B82F6" radius={[0, 3, 3, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Top 5 by revenue */}
+                  {topByRevenue.length > 0 && (
+                    <div className="mb-5">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted/60">
+                        Top revenue — by item
+                      </p>
+                      <ResponsiveContainer width="100%" height={140}>
+                        <BarChart data={topByRevenue} layout="vertical" margin={{ left: 0, right: 12, top: 0, bottom: 0 }}>
+                          <XAxis type="number" tick={{ fontSize: 10, fill: "#6B7280" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                          <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "#9CA3AF" }} width={110} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{ background: "#1A1D23", border: "1px solid #2A2D35", borderRadius: 6, fontSize: 11 }}
+                            formatter={(v: unknown) => [`$${(v as number).toFixed(2)}`, ""]}
+                          />
+                          <Bar dataKey="total_revenue" fill="#10B981" radius={[0, 3, 3, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* Category revenue pie */}
+                  {categoryRevenue.length > 1 && (
+                    <div className="mb-5">
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted/60">
+                        Revenue by category
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <ResponsiveContainer width={120} height={120}>
+                          <PieChart>
+                            <Pie data={categoryRevenue} dataKey="revenue" nameKey="name" cx="50%" cy="50%" outerRadius={55} innerRadius={30}>
+                              {categoryRevenue.map((_, idx) => (
+                                <Cell
+                                  key={idx}
+                                  fill={["#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4"][idx % 6]}
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ background: "#1A1D23", border: "1px solid #2A2D35", borderRadius: 6, fontSize: 11 }}
+                              formatter={(v: unknown) => [`$${(v as number).toFixed(0)}`, ""]}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="space-y-1.5">
+                          {categoryRevenue.slice(0, 5).map((c, idx) => (
+                            <div key={c.name} className="flex items-center gap-2">
+                              <div
+                                className="h-2 w-2 flex-shrink-0 rounded-full"
+                                style={{ backgroundColor: ["#3B82F6","#10B981","#F59E0B","#8B5CF6","#EF4444","#06B6D4"][idx % 6] }}
+                              />
+                              <span className="text-[11px] text-content-muted">{c.name}</span>
+                              <span className="ml-auto text-[11px] font-medium text-content">${c.revenue.toFixed(0)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Stale items — not ordered in 30+ days */}
+                  {staleDishes.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-content-muted/60">
+                        Not ordered in 30+ days
+                      </p>
+                      <div className="space-y-1.5">
+                        {staleDishes.map((item) => {
+                          const days = item.last_ordered
+                            ? Math.floor((Date.now() - new Date(item.last_ordered).getTime()) / 86_400_000)
+                            : null;
+                          return (
+                            <div key={item.id} className="flex items-center justify-between rounded-btn border border-line px-3 py-2">
+                              <div>
+                                <span className="text-xs font-medium text-content">{item.name}</span>
+                                {item.category && (
+                                  <span className="ml-1.5 text-[10px] text-content-muted">{item.category}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {days !== null && (
+                                  <span className="text-[10px] text-content-muted">{days}d ago</span>
+                                )}
+                                <span className="rounded-full bg-yellow-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-yellow-400">
+                                  promote
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
