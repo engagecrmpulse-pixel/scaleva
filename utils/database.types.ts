@@ -64,6 +64,7 @@ export interface SpendHistoryEntry {
   date: string;
   amount: number;
   description?: string;
+  items?: string[];
 }
 
 export interface Database {
@@ -113,6 +114,12 @@ export interface Database {
           consent_date: string | null;
           ltv: number;
           last_review_request_at: string | null;
+          birthday: string | null;
+          customer_since: string | null;
+          favorite_items: string[];
+          visit_count: number;
+          avg_order_value: number;
+          total_spend: number;
         };
         Insert: {
           id?: string;
@@ -131,6 +138,12 @@ export interface Database {
           consent_date?: string | null;
           ltv?: number;
           last_review_request_at?: string | null;
+          birthday?: string | null;
+          customer_since?: string | null;
+          favorite_items?: string[];
+          visit_count?: number;
+          avg_order_value?: number;
+          total_spend?: number;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
         Relationships: [];

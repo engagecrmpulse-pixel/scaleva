@@ -41,21 +41,45 @@ function visitFrequencyLabel(history: SpendHistoryEntry[]): string {
 }
 
 function lastItemNames(history: SpendHistoryEntry[], limit = 2): string {
-  return history
-    .filter((h) => h.description?.trim())
-    .slice(-limit)
-    .map((h) => h.description!.trim())
-    .filter((v, i, arr) => arr.indexOf(v) === i)
-    .join(" and ");
+  const names: string[] = [];
+  for (const h of history.slice(-limit)) {
+    if (h.items?.length) {
+      names.push(...h.items.slice(0, 2));
+    } else if (h.description?.trim()) {
+      names.push(h.description.trim());
+    }
+  }
+  return Array.from(new Set(names)).slice(0, 3).join(" and ");
 }
 
 function allItemDescriptions(history: SpendHistoryEntry[], limit = 4): string {
-  const items = history
-    .filter((h) => h.description?.trim())
-    .slice(-limit)
-    .map((h) => h.description!.trim())
-    .filter((v, i, arr) => arr.indexOf(v) === i);
-  return items.join(", ");
+  const names: string[] = [];
+  for (const h of history.slice(-limit)) {
+    if (h.items?.length) {
+      names.push(...h.items.slice(0, 2));
+    } else if (h.description?.trim()) {
+      names.push(h.description.trim());
+    }
+  }
+  return Array.from(new Set(names)).slice(0, 6).join(", ");
+}
+
+function tenureLabel(customerSince: string | null | undefined): string {
+  if (!customerSince) return "";
+  const months = Math.floor((Date.now() - new Date(customerSince).getTime()) / (30 * 86_400_000));
+  if (months < 2) return "a new guest";
+  if (months < 12) return `a ${months}-month guest`;
+  const years = Math.floor(months / 12);
+  return years === 1 ? "a 1-year guest" : `a ${years}-year guest`;
+}
+
+function isBirthdaySoon(birthday: string | null | undefined): boolean {
+  if (!birthday) return false;
+  const today = new Date();
+  const bDay = new Date(birthday);
+  const bdThisYear = new Date(today.getFullYear(), bDay.getMonth(), bDay.getDate());
+  const diff = (bdThisYear.getTime() - today.getTime()) / 86_400_000;
+  return diff >= 0 && diff <= 7;
 }
 
 function currentSeason(): string {
@@ -116,7 +140,11 @@ function buildSystemPrompt(
   daysSinceLastVisit: number | null,
   avgSpendAmount: number,
   totalSpendAmount: number,
-  personality: PersonalityConfig
+  personality: PersonalityConfig,
+  favoriteItems: string[],
+  customerSince: string | null | undefined,
+  birthday: string | null | undefined,
+  visitCount: number
 ): string {
   const firstName = customerName.split(" ")[0];
   const season = currentSeason();
@@ -137,11 +165,19 @@ function buildSystemPrompt(
   if (ind === "restaurant") {
     const freqNote = freqDays ? `usually every ${freqDays} days — ${isOverdue ? "they are overdue" : "on schedule"}` : "";
     const daysNote = daysSinceLastVisit !== null ? `${daysSinceLastVisit} days ago` : "";
-    const itemNote = lastItems ? `Last ordered: ${lastItems}.` : allItems ? `Recent orders: ${allItems}.` : "";
+    const favNote = favoriteItems.length > 0
+      ? `Favorite dishes: ${favoriteItems.join(", ")}.`
+      : lastItems ? `Last ordered: ${lastItems}.` : allItems ? `Recent orders: ${allItems}.` : "";
+    const tenure = tenureLabel(customerSince);
+    const birthdayNote = isBirthdaySoon(birthday) ? "Their birthday is within the next 7 days — wish them happy birthday naturally. " : "";
+    const isVIP = visitCount >= 10 || totalSpendAmount >= 500;
+    const vipNote = isVIP ? `They are a VIP guest (${visitCount} visits, $${totalSpendAmount.toFixed(0)} lifetime). ` : "";
     industryPrompt =
       `Write a personal SMS from the owner of ${businessName}. ` +
       `${firstName} last visited ${daysNote}${freqNote ? ` (${freqNote})` : ""}. ` +
-      `${itemNote} Avg spend $${avgSpendAmount.toFixed(2)}. Lifetime $${totalSpendAmount.toFixed(2)}. ` +
+      `${favNote} ${vipNote}Avg spend $${avgSpendAmount.toFixed(2)}. Lifetime $${totalSpendAmount.toFixed(2)}. ` +
+      `${tenure ? `They have been a guest for ${tenure}. ` : ""}` +
+      `${birthdayNote}` +
       `${hasLoyalty ? "Mention a loyalty perk or reward. " : ""}` +
       `${personalityInstructions} Never sound like marketing.`;
   } else if (ind === "salon") {
@@ -307,8 +343,10 @@ export async function POST(request: NextRequest) {
 
     const config = business.config ?? {};
     const history: SpendHistoryEntry[] = customer.spend_history ?? [];
-    const totalSpendAmount = totalSpend(history);
-    const avgSpendAmount = calcAvgSpend(history);
+    const totalSpendAmount = (customer.total_spend ?? 0) > 0 ? customer.total_spend : totalSpend(history);
+    const avgSpendAmount = (customer.avg_order_value ?? 0) > 0 ? customer.avg_order_value : calcAvgSpend(history);
+    const visitCount = (customer.visit_count ?? 0) > 0 ? customer.visit_count : history.length;
+    const favoriteItems: string[] = (customer.favorite_items as string[] | null) ?? [];
     const daysSinceLastVisit = daysSinceDate(customer.last_purchase);
     const goals = business.goals ?? "";
 
@@ -341,7 +379,11 @@ export async function POST(request: NextRequest) {
       daysSinceLastVisit,
       avgSpendAmount,
       totalSpendAmount,
-      personality
+      personality,
+      favoriteItems,
+      customer.customer_since,
+      customer.birthday,
+      visitCount
     );
 
     const firstName = customer.name.split(" ")[0];
@@ -356,7 +398,10 @@ export async function POST(request: NextRequest) {
       customer.last_purchase ? `Last purchase date: ${customer.last_purchase}` : null,
       totalSpendAmount > 0 ? `Total lifetime spend: ${formatCurrency(totalSpendAmount)}` : null,
       avgSpendAmount > 0 ? `Average spend per visit: ${formatCurrency(avgSpendAmount)}` : null,
-      history.length > 0 ? `Visit count: ${history.length}` : null,
+      visitCount > 0 ? `Visit count: ${visitCount}` : null,
+      favoriteItems.length > 0 ? `Favorite dishes: ${favoriteItems.join(", ")}` : null,
+      customer.customer_since ? `Guest since: ${tenureLabel(customer.customer_since)}` : null,
+      isBirthdaySoon(customer.birthday) ? "Birthday is within the next 7 days." : null,
       insights?.best_reply_hour != null
         ? `This customer typically responds around ${insights.best_reply_hour}:00.`
         : null,
