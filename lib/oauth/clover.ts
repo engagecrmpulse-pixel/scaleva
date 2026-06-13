@@ -17,7 +17,7 @@ export async function exchangeCloverToken(
   _redirectUri: string
 ): Promise<string> {
   // Clover token exchange — returns merchant_id and access_token
-  const res = await fetch(`${BASE}/oauth/token?client_id=${process.env.CLOVER_APP_ID}&client_secret=${process.env.CLOVER_APP_SECRET}&code=${code}`);
+  const res = await fetch(`${BASE}/oauth/token?client_id=${process.env.CLOVER_CLIENT_ID}&client_secret=${process.env.CLOVER_CLIENT_SECRET}&code=${code}`);
   const data = await res.json() as { access_token?: string; merchant_id?: string; error?: string };
   if (!data.access_token) {
     throw new Error(data.error ?? "Clover token exchange failed");

@@ -13,19 +13,7 @@ export {
 } from "@/lib/import/types";
 import type { ImportedCustomer } from "@/lib/import/types";
 
-export type DataSource =
-  // Spreadsheet
-  | "csv"
-  // Restaurant POS
-  | "square"
-  | "clover"
-  | "toast"
-  | "lightspeed"
-  | "revel"
-  // Payments
-  | "stripe"
-  // Manual
-  | "manual";
+export type DataSource = "csv" | "square" | "clover" | "manual";
 
 export interface MenuItemDraft {
   name: string;
@@ -92,7 +80,6 @@ export interface DataSourceGroup {
 }
 
 export const DATA_SOURCES: DataSourceOption[] = [
-  // ── Spreadsheet ───────────────────────────────────────────────────────────
   {
     id: "csv",
     name: "Spreadsheet / CSV",
@@ -102,7 +89,6 @@ export const DATA_SOURCES: DataSourceOption[] = [
     live: true,
     pulls: "Name, phone, email, last visit date, spend amount.",
   },
-  // ── Restaurant POS ────────────────────────────────────────────────────────
   {
     id: "square",
     name: "Square",
@@ -122,44 +108,6 @@ export const DATA_SOURCES: DataSourceOption[] = [
     pulls: "Guest profiles, phone numbers, emails, and order history.",
   },
   {
-    id: "toast",
-    name: "Toast",
-    description: "Import guests and visit frequency from your Toast POS — built for restaurants.",
-    icon: "🍞",
-    oauth: true,
-    live: false,
-    pulls: "Guest names, contact info, visit frequency, and spend.",
-  },
-  {
-    id: "lightspeed",
-    name: "Lightspeed Restaurant",
-    description: "Pull guests and sales data from Lightspeed Restaurant.",
-    icon: "⚡",
-    oauth: true,
-    live: false,
-    pulls: "Guest profiles, order history, and lifetime value.",
-  },
-  {
-    id: "revel",
-    name: "Revel Systems",
-    description: "Import guests and orders from your Revel iPad POS.",
-    icon: "📱",
-    oauth: true,
-    live: false,
-    pulls: "Guest data, transaction history, and loyalty points.",
-  },
-  // ── Payments ──────────────────────────────────────────────────────────────
-  {
-    id: "stripe",
-    name: "Stripe",
-    description: "Import paying guests and their full payment history.",
-    icon: "💳",
-    oauth: true,
-    live: true,
-    pulls: "Guest records, successful payments, and lifetime value.",
-  },
-  // ── Manual ────────────────────────────────────────────────────────────────
-  {
     id: "manual",
     name: "Add manually",
     description: "Enter guests one at a time. Good for a small starting list.",
@@ -172,12 +120,8 @@ export const DATA_SOURCES: DataSourceOption[] = [
 
 export const DATA_SOURCE_GROUPS: DataSourceGroup[] = [
   {
-    label: "Restaurant POS",
-    sources: DATA_SOURCES.filter((s) => ["square", "clover", "toast", "lightspeed", "revel"].includes(s.id)),
-  },
-  {
-    label: "Payments",
-    sources: DATA_SOURCES.filter((s) => ["stripe"].includes(s.id)),
+    label: "Connect your POS",
+    sources: DATA_SOURCES.filter((s) => ["square", "clover"].includes(s.id)),
   },
 ];
 

@@ -82,10 +82,10 @@ export function StepDataSource({ state, update }: StepProps) {
   return (
     <div>
       <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
-        Where do your customers come from?
+        Connect your guest data
       </h2>
       <p className="mt-1.5 text-sm text-content-muted">
-        Choose a source to import your customer list. CSV and Excel work with any system.
+        Connect Square or Clover to import your guest history automatically, or upload a CSV export.
       </p>
 
       {/* ── Spreadsheet — most popular ──────────────────────────────────── */}
@@ -169,16 +169,15 @@ export function StepDataSource({ state, update }: StepProps) {
         )}
       </div>
 
-      {/* ── Platform integrations grouped ────────────────────────────────── */}
+      {/* ── POS integrations ─────────────────────────────────────────────── */}
       <div className="mt-6 space-y-5">
         <p className="text-xs font-semibold uppercase tracking-widest text-content-muted">
-          Or connect a platform
+          Or connect your POS
         </p>
 
         {DATA_SOURCE_GROUPS.map((group) => (
           <div key={group.label}>
-            <p className="mb-2 text-[11px] font-medium text-content-muted/70">{group.label}</p>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3">
               {group.sources.map((source) => (
                 <IntegrationCard
                   key={source.id}
@@ -219,11 +218,6 @@ export function StepDataSource({ state, update }: StepProps) {
         </button>
       </div>
 
-      {selected && !DATA_SOURCES.find((s) => s.id === selected)?.live && (
-        <div className="mt-3 rounded-btn border border-yellow-500/20 bg-yellow-500/5 px-4 py-3 text-xs text-yellow-400">
-          This integration is coming soon. In the meantime, use Spreadsheet import — export your customer list from {DATA_SOURCES.find((s) => s.id === selected)?.name} as a CSV file and upload it here.
-        </div>
-      )}
     </div>
   );
 }

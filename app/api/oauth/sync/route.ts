@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractSquareCustomers } from "@/lib/oauth/square";
-import { extractStripeCustomers } from "@/lib/oauth/stripe";
-import { extractHubSpotCustomers } from "@/lib/oauth/hubspot";
+import { extractCloverCustomers } from "@/lib/oauth/clover";
 import type { ExtractedCustomer } from "@/lib/oauth/types";
 
 // Called by the onboarding wizard after an OAuth redirect to pull staged
@@ -32,11 +31,8 @@ export async function POST(request: NextRequest) {
       case "square":
         customers = await extractSquareCustomers(token);
         break;
-      case "stripe":
-        customers = await extractStripeCustomers(token);
-        break;
-      case "hubspot":
-        customers = await extractHubSpotCustomers(token);
+      case "clover":
+        customers = await extractCloverCustomers(token);
         break;
     }
   } catch {

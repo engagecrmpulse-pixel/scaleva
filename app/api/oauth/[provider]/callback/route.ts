@@ -2,8 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { BusinessConfig } from "@/utils/database.types";
 import { exchangeSquareToken, extractSquareCustomers } from "@/lib/oauth/square";
-import { exchangeStripeToken, extractStripeCustomers } from "@/lib/oauth/stripe";
-import { exchangeHubSpotToken, extractHubSpotCustomers } from "@/lib/oauth/hubspot";
 import { exchangeCloverToken, extractCloverCustomers } from "@/lib/oauth/clover";
 import type { ExtractedCustomer } from "@/lib/oauth/types";
 
@@ -18,10 +16,6 @@ async function getAccessToken(
   switch (provider) {
     case "square":
       return exchangeSquareToken(code, redirectUri);
-    case "stripe":
-      return exchangeStripeToken(code);
-    case "hubspot":
-      return exchangeHubSpotToken(code, redirectUri);
     case "clover":
       return exchangeCloverToken(code, redirectUri);
     default:
@@ -36,10 +30,6 @@ async function extractCustomers(
   switch (provider) {
     case "square":
       return extractSquareCustomers(accessToken);
-    case "stripe":
-      return extractStripeCustomers(accessToken);
-    case "hubspot":
-      return extractHubSpotCustomers(accessToken);
     case "clover":
       return extractCloverCustomers(accessToken);
     default:
