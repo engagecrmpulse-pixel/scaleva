@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { BusinessConfig } from "@/utils/database.types";
 import { exchangeSquareToken, extractSquareCustomers } from "@/lib/oauth/square";
-import { exchangeCloverToken, extractCloverCustomers } from "@/lib/oauth/clover";
 import type { ExtractedCustomer } from "@/lib/oauth/types";
 
 const APP_URL =
@@ -13,28 +12,16 @@ async function getAccessToken(
   code: string,
   redirectUri: string
 ): Promise<string> {
-  switch (provider) {
-    case "square":
-      return exchangeSquareToken(code, redirectUri);
-    case "clover":
-      return exchangeCloverToken(code, redirectUri);
-    default:
-      return code;
-  }
+  if (provider === "square") return exchangeSquareToken(code, redirectUri);
+  return code;
 }
 
 async function extractCustomers(
   provider: string,
   accessToken: string
 ): Promise<ExtractedCustomer[]> {
-  switch (provider) {
-    case "square":
-      return extractSquareCustomers(accessToken);
-    case "clover":
-      return extractCloverCustomers(accessToken);
-    default:
-      return [];
-  }
+  if (provider === "square") return extractSquareCustomers(accessToken);
+  return [];
 }
 
 export async function GET(

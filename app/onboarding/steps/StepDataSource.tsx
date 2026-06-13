@@ -85,7 +85,7 @@ export function StepDataSource({ state, update }: StepProps) {
         Connect your guest data
       </h2>
       <p className="mt-1.5 text-sm text-content-muted">
-        Connect Square or Clover to import your guest history automatically, or upload a CSV export.
+        Connect Square to import your guest history automatically, or upload a CSV export.
       </p>
 
       {/* ── Spreadsheet — most popular ──────────────────────────────────── */}
@@ -176,17 +176,15 @@ export function StepDataSource({ state, update }: StepProps) {
         </p>
 
         {DATA_SOURCE_GROUPS.map((group) => (
-          <div key={group.label}>
-            <div className="grid grid-cols-2 gap-3">
-              {group.sources.map((source) => (
-                <IntegrationCard
-                  key={source.id}
-                  source={source}
-                  selected={selected === source.id}
-                  onSelect={() => select(source.id)}
-                />
-              ))}
-            </div>
+          <div key={group.label} className="flex flex-col gap-2">
+            {group.sources.map((source) => (
+              <IntegrationCard
+                key={source.id}
+                source={source}
+                selected={selected === source.id}
+                onSelect={() => select(source.id)}
+              />
+            ))}
           </div>
         ))}
       </div>

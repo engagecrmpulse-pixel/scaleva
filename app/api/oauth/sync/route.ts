@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractSquareCustomers } from "@/lib/oauth/square";
-import { extractCloverCustomers } from "@/lib/oauth/clover";
 import type { ExtractedCustomer } from "@/lib/oauth/types";
 
 // Called by the onboarding wizard after an OAuth redirect to pull staged
@@ -27,13 +26,8 @@ export async function POST(request: NextRequest) {
 
   let customers: ExtractedCustomer[] = [];
   try {
-    switch (provider) {
-      case "square":
-        customers = await extractSquareCustomers(token);
-        break;
-      case "clover":
-        customers = await extractCloverCustomers(token);
-        break;
+    if (provider === "square") {
+      customers = await extractSquareCustomers(token);
     }
   } catch {
     return NextResponse.json({ customers: [], tokenValid: false });

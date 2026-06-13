@@ -13,7 +13,7 @@ export {
 } from "@/lib/import/types";
 import type { ImportedCustomer } from "@/lib/import/types";
 
-export type DataSource = "csv" | "square" | "clover" | "manual";
+export type DataSource = "csv" | "square" | "manual";
 
 export interface MenuItemDraft {
   name: string;
@@ -99,15 +99,6 @@ export const DATA_SOURCES: DataSourceOption[] = [
     pulls: "Guest names, phones, emails, order history, and spend totals.",
   },
   {
-    id: "clover",
-    name: "Clover",
-    description: "Sync guests and purchase history from your Clover POS.",
-    icon: "🍀",
-    oauth: true,
-    live: true,
-    pulls: "Guest profiles, phone numbers, emails, and order history.",
-  },
-  {
     id: "manual",
     name: "Add manually",
     description: "Enter guests one at a time. Good for a small starting list.",
@@ -121,7 +112,7 @@ export const DATA_SOURCES: DataSourceOption[] = [
 export const DATA_SOURCE_GROUPS: DataSourceGroup[] = [
   {
     label: "Connect your POS",
-    sources: DATA_SOURCES.filter((s) => ["square", "clover"].includes(s.id)),
+    sources: DATA_SOURCES.filter((s) => s.id === "square"),
   },
 ];
 

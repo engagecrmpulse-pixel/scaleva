@@ -97,7 +97,7 @@ export default function LandingPage() {
                 Knows your guests
               </h3>
               <p className="mt-3 max-w-md text-base leading-relaxed text-content-muted">
-                Connect Square, Toast, Clover, or upload a CSV. Every message
+                Connect Square or upload a CSV. Every message
                 Scaleva writes is grounded in what that guest actually ordered
                 and when they last visited.
               </p>

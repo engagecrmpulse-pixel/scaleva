@@ -4,20 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 const APP_URL =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://scaleva.vercel.app";
 
-const CLOVER_BASE =
-  process.env.CLOVER_ENV === "sandbox"
-    ? "https://sandbox.dev.clover.com"
-    : "https://www.clover.com";
-
 const PROVIDER_AUTH_URLS: Record<
   string,
   (redirectUri: string, state: string) => string
 > = {
   square: (redirectUri, state) =>
     `https://connect.squareup.com/oauth2/authorize?client_id=${process.env.SQUARE_CLIENT_ID}&scope=CUSTOMERS_READ+CUSTOMERS_WRITE+ORDERS_READ+LOYALTY_READ&session=false&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`,
-
-  clover: (_redirectUri, _state) =>
-    `${CLOVER_BASE}/oauth/authorize?client_id=${process.env.CLOVER_CLIENT_ID}&response_type=code`,
 };
 
 export async function GET(

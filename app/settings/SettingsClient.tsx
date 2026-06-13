@@ -559,20 +559,14 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             </div>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
-            {[
-              { id: "square", label: "Square", icon: "◼️" },
-              { id: "clover", label: "Clover", icon: "🍀" },
-            ].map(({ id, label, icon }) =>
-              !integrations[id]?.connected && (
-                <a
-                  key={id}
-                  href={`/api/oauth/${id}`}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted hover:text-content hover:border-content-muted transition-colors"
-                >
-                  <span>{icon}</span>
-                  Connect {label}
-                </a>
-              )
+            {!integrations["square"]?.connected && (
+              <a
+                href="/api/oauth/square"
+                className="inline-flex h-8 items-center gap-1.5 rounded-btn border border-line px-3 text-xs font-medium text-content-muted hover:text-content hover:border-content-muted transition-colors"
+              >
+                <span>◼️</span>
+                Connect Square
+              </a>
             )}
           </div>
         </div>
