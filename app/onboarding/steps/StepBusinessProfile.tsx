@@ -27,117 +27,28 @@ interface IndustryConfig {
   faqPresets: FaqDraft[];
 }
 
-const INDUSTRY_CONFIG: Record<string, IndustryConfig> = {
-  Restaurant: {
-    itemsLabel: "Your Menu",
-    itemsSubLabel: "Dishes & drinks",
-    itemsDesc: "Add your most popular items — the AI references these when customers ask what to order or about your menu.",
-    categoryOptions: ["Appetizers", "Mains", "Sides", "Desserts", "Drinks", "Specials", "Kids", "Brunch"],
-    namePlaceholder: "e.g. Truffle Risotto",
-    pricePlaceholder: "18",
-    descPlaceholder: "e.g. Arborio rice, black truffle, parmesan cream",
-    offerLabel: "Current special or promotion",
-    offerPlaceholder: "e.g. Happy hour Mon–Fri 4–6 PM, 50% off appetizers",
-    showBookingLink: true,
-    showLoyalty: false,
-    faqPresets: [
-      { question: "Do you take reservations?", answer: "" },
-      { question: "Do you have vegetarian/vegan options?", answer: "" },
-      { question: "Is there parking nearby?", answer: "" },
-    ],
-  },
-  Salon: {
-    itemsLabel: "Your Services",
-    itemsSubLabel: "Treatments & pricing",
-    itemsDesc: "List your services so the AI can answer pricing questions and recommend treatments in conversations.",
-    categoryOptions: ["Hair", "Color", "Nails", "Skin", "Massage", "Waxing", "Lashes", "Other"],
-    namePlaceholder: "e.g. Full Balayage",
-    pricePlaceholder: "150",
-    descPlaceholder: "e.g. Includes toner, blowout, and style — 3 hrs",
-    offerLabel: "Current promotion",
-    offerPlaceholder: "e.g. 20% off all color services in June",
-    showBookingLink: true,
-    showLoyalty: true,
-    faqPresets: [
-      { question: "How do I book an appointment?", answer: "" },
-      { question: "What is your cancellation policy?", answer: "" },
-      { question: "Do you offer gift cards?", answer: "" },
-    ],
-  },
-  Retail: {
-    itemsLabel: "Featured Products",
-    itemsSubLabel: "Your top sellers",
-    itemsDesc: "Add your best sellers so the AI can reference them and drive customers back for more.",
-    categoryOptions: ["Clothing", "Accessories", "Home", "Beauty", "Electronics", "Food", "Other"],
-    namePlaceholder: "e.g. Summer Linen Shirt",
-    pricePlaceholder: "45",
-    descPlaceholder: "e.g. 100% linen, available in 5 colors, sizes XS–XXL",
-    offerLabel: "Current sale or promotion",
-    offerPlaceholder: "e.g. 30% off all summer styles through end of June",
-    showBookingLink: false,
-    showLoyalty: true,
-    faqPresets: [
-      { question: "What is your return policy?", answer: "" },
-      { question: "Do you offer gift wrapping?", answer: "" },
-      { question: "Do you ship online orders?", answer: "" },
-    ],
-  },
-  Fitness: {
-    itemsLabel: "Classes & Memberships",
-    itemsSubLabel: "What you offer",
-    itemsDesc: "List your classes and membership tiers so the AI can promote them and answer questions.",
-    categoryOptions: ["HIIT", "Yoga", "Pilates", "Cycling", "Strength", "Boxing", "Dance", "Membership"],
-    namePlaceholder: "e.g. 6 AM Bootcamp",
-    pricePlaceholder: "25",
-    descPlaceholder: "e.g. 45-min full-body HIIT, all levels welcome",
-    offerLabel: "Current promotion",
-    offerPlaceholder: "e.g. First class free for new members",
-    showBookingLink: true,
-    showLoyalty: true,
-    faqPresets: [
-      { question: "How do I sign up for a class?", answer: "" },
-      { question: "Do you offer a free trial?", answer: "" },
-      { question: "Can I freeze my membership?", answer: "" },
-    ],
-  },
-  Healthcare: {
-    itemsLabel: "Services Offered",
-    itemsSubLabel: "Treatments & specialties",
-    itemsDesc: "List your services so the AI can direct patients accurately and answer common intake questions.",
-    categoryOptions: ["Primary Care", "Specialist", "Diagnostics", "Therapy", "Wellness", "Other"],
-    namePlaceholder: "e.g. Annual Physical",
-    pricePlaceholder: "",
-    descPlaceholder: "e.g. Full wellness exam, includes bloodwork referral",
-    offerLabel: "Current patient offer",
-    offerPlaceholder: "e.g. New patients: same-week appointments available",
-    showBookingLink: true,
-    showLoyalty: false,
-    faqPresets: [
-      { question: "What insurance do you accept?", answer: "" },
-      { question: "How do I schedule an appointment?", answer: "" },
-      { question: "Do you offer telehealth visits?", answer: "" },
-    ],
-  },
+const RESTAURANT_CONFIG: IndustryConfig = {
+  itemsLabel: "Your Menu",
+  itemsSubLabel: "Dishes & drinks",
+  itemsDesc: "Add your most popular items — the AI references these when guests ask what to order, and mentions them in personalized outreach.",
+  categoryOptions: ["Appetizers", "Mains", "Sides", "Desserts", "Drinks", "Specials", "Brunch", "Kids"],
+  namePlaceholder: "e.g. Truffle Risotto",
+  pricePlaceholder: "18",
+  descPlaceholder: "e.g. Arborio rice, black truffle, parmesan cream",
+  offerLabel: "Current special or promotion",
+  offerPlaceholder: "e.g. Happy hour Mon–Fri 4–6 PM, 50% off appetizers",
+  showBookingLink: true,
+  showLoyalty: false,
+  faqPresets: [
+    { question: "Do you take reservations?", answer: "" },
+    { question: "Do you have vegetarian/vegan options?", answer: "" },
+    { question: "Is there parking nearby?", answer: "" },
+    { question: "Do you have a private dining room?", answer: "" },
+  ],
 };
 
-function getConfig(industry: string): IndustryConfig {
-  return INDUSTRY_CONFIG[industry] ?? {
-    itemsLabel: "Your Offerings",
-    itemsSubLabel: "Products & services",
-    itemsDesc: "Add your key offerings so the AI can answer questions and mention them in conversations.",
-    categoryOptions: ["Service", "Product", "Package", "Other"],
-    namePlaceholder: "e.g. Starter Package",
-    pricePlaceholder: "99",
-    descPlaceholder: "e.g. Includes initial consultation and first session",
-    offerLabel: "Current promotion",
-    offerPlaceholder: "e.g. 10% off for returning customers",
-    showBookingLink: true,
-    showLoyalty: false,
-    faqPresets: [
-      { question: "How do I get started?", answer: "" },
-      { question: "What are your hours?", answer: "" },
-    ],
-  };
+function getConfig(_industry: string): IndustryConfig {
+  return RESTAURANT_CONFIG;
 }
 
 const inputClass =
@@ -397,10 +308,10 @@ export function StepBusinessProfile({ state, update }: StepProps) {
   return (
     <div>
       <h2 className="font-heading text-xl font-semibold tracking-tight text-content">
-        Build your business profile
+        Build your restaurant profile
       </h2>
       <p className="mt-1 text-sm text-content-muted">
-        The more detail you add here, the smarter and more personal your AI conversations become.
+        The more detail you add here, the smarter your AI becomes — it&apos;ll reference your menu, hours, and specials in every message.
       </p>
 
       <div className="mt-6 space-y-8">

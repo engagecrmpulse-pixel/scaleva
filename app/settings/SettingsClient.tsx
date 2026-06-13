@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Business, BusinessConfig, Subscription } from "@/utils/database.types";
-import { INDUSTRIES, VOICES, CADENCES } from "@/app/onboarding/types";
+import { VOICES, CADENCES } from "@/app/onboarding/types";
 
 const SEND_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const SEND_TIMES = ["8 AM", "9 AM", "12 PM", "3 PM", "6 PM"];
@@ -273,9 +273,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Industry</label>
-                <select className={selectClass} value={industry} onChange={e => setIndustry(e.target.value)}>
-                  {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-                </select>
+                <div className={`${inputClass} cursor-default select-none opacity-60`}>Restaurant</div>
               </div>
               <div>
                 <label className={labelClass}>Voice</label>
@@ -286,7 +284,7 @@ export function SettingsClient({ business, subscription, userEmail }: SettingsCl
             </div>
             <div>
               <label className={labelClass}>Goals (comma separated)</label>
-              <input className={inputClass} value={goals} onChange={e => setGoals(e.target.value)} placeholder="e.g. Increase return visits, Grow LTV" />
+              <input className={inputClass} value={goals} onChange={e => setGoals(e.target.value)} placeholder="e.g. Drive repeat visits, Fill slow nights, Increase average check" />
             </div>
             <div>
               <label className={labelClass}>Monthly revenue recovery goal ($)</label>

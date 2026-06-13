@@ -16,30 +16,14 @@ import type { ImportedCustomer } from "@/lib/import/types";
 export type DataSource =
   // Spreadsheet
   | "csv"
-  // POS Systems
+  // Restaurant POS
   | "square"
   | "clover"
   | "toast"
   | "lightspeed"
   | "revel"
-  // Booking & Scheduling
-  | "mindbody"
-  | "vagaro"
-  | "fresha"
-  | "acuity"
-  // E-Commerce
-  | "shopify"
-  | "woocommerce"
-  | "bigcommerce"
-  // CRM & Sales
-  | "hubspot"
+  // Payments
   | "stripe"
-  | "salesforce"
-  | "pipedrive"
-  // Field Service
-  | "jobber"
-  | "housecall"
-  | "servicetitan"
   // Manual
   | "manual";
 
@@ -112,35 +96,35 @@ export const DATA_SOURCES: DataSourceOption[] = [
   {
     id: "csv",
     name: "Spreadsheet / CSV",
-    description: "Upload an Excel or CSV file. Works with any system that can export a spreadsheet.",
+    description: "Upload an Excel or CSV export from your POS or reservation system.",
     icon: "📊",
     oauth: false,
     live: true,
-    pulls: "Name, phone, email, last purchase date, spend amount.",
+    pulls: "Name, phone, email, last visit date, spend amount.",
   },
-  // ── POS Systems ───────────────────────────────────────────────────────────
+  // ── Restaurant POS ────────────────────────────────────────────────────────
   {
     id: "square",
     name: "Square",
-    description: "Import customers & full order history from your Square account.",
+    description: "Import guests and full order history from your Square for Restaurants account.",
     icon: "◼️",
     oauth: true,
     live: true,
-    pulls: "Names, phones, emails, order history, and spend totals.",
+    pulls: "Guest names, phones, emails, order history, and spend totals.",
   },
   {
     id: "clover",
     name: "Clover",
-    description: "Sync customers and purchase history from your Clover POS.",
+    description: "Sync guests and purchase history from your Clover POS.",
     icon: "🍀",
     oauth: true,
     live: true,
-    pulls: "Customer profiles, phone numbers, emails, and order history.",
+    pulls: "Guest profiles, phone numbers, emails, and order history.",
   },
   {
     id: "toast",
     name: "Toast",
-    description: "Import guests and visit frequency from your Toast POS.",
+    description: "Import guests and visit frequency from your Toast POS — built for restaurants.",
     icon: "🍞",
     oauth: true,
     live: false,
@@ -148,157 +132,37 @@ export const DATA_SOURCES: DataSourceOption[] = [
   },
   {
     id: "lightspeed",
-    name: "Lightspeed",
-    description: "Pull customers and sales data from Lightspeed Restaurant or Retail.",
+    name: "Lightspeed Restaurant",
+    description: "Pull guests and sales data from Lightspeed Restaurant.",
     icon: "⚡",
     oauth: true,
     live: false,
-    pulls: "Customer profiles, purchase history, and lifetime value.",
+    pulls: "Guest profiles, order history, and lifetime value.",
   },
   {
     id: "revel",
     name: "Revel Systems",
-    description: "Import customers and orders from your Revel iPad POS.",
+    description: "Import guests and orders from your Revel iPad POS.",
     icon: "📱",
     oauth: true,
     live: false,
-    pulls: "Customer data, transaction history, and loyalty points.",
+    pulls: "Guest data, transaction history, and loyalty points.",
   },
-  // ── Booking & Scheduling ──────────────────────────────────────────────────
-  {
-    id: "mindbody",
-    name: "Mindbody",
-    description: "Sync clients and visit history from your Mindbody account.",
-    icon: "🧘",
-    oauth: true,
-    live: false,
-    pulls: "Client profiles, class history, membership status, and spend.",
-  },
-  {
-    id: "vagaro",
-    name: "Vagaro",
-    description: "Import clients and appointment history from Vagaro.",
-    icon: "💅",
-    oauth: true,
-    live: false,
-    pulls: "Client names, contacts, appointment history, and service spend.",
-  },
-  {
-    id: "fresha",
-    name: "Fresha",
-    description: "Pull clients and booking history from your Fresha account.",
-    icon: "🌿",
-    oauth: true,
-    live: false,
-    pulls: "Client profiles, booking history, and spend data.",
-  },
-  {
-    id: "acuity",
-    name: "Acuity Scheduling",
-    description: "Sync clients and appointment history from Acuity.",
-    icon: "📅",
-    oauth: true,
-    live: false,
-    pulls: "Client names, emails, phone numbers, and appointment history.",
-  },
-  // ── E-Commerce ────────────────────────────────────────────────────────────
-  {
-    id: "shopify",
-    name: "Shopify",
-    description: "Pull store customers, orders, and lifetime value from Shopify.",
-    icon: "🛍️",
-    oauth: true,
-    live: false,
-    pulls: "Customer profiles, full order history, and total spend.",
-  },
-  {
-    id: "woocommerce",
-    name: "WooCommerce",
-    description: "Import customers and orders from your WooCommerce store.",
-    icon: "🛒",
-    oauth: true,
-    live: false,
-    pulls: "Customer accounts, order history, and total spend.",
-  },
-  {
-    id: "bigcommerce",
-    name: "BigCommerce",
-    description: "Sync customers and purchase data from BigCommerce.",
-    icon: "📦",
-    oauth: true,
-    live: false,
-    pulls: "Customer profiles, purchase history, and order totals.",
-  },
-  // ── CRM & Payments ────────────────────────────────────────────────────────
-  {
-    id: "hubspot",
-    name: "HubSpot",
-    description: "Connect your CRM contacts, companies, and deal history.",
-    icon: "🧲",
-    oauth: true,
-    live: true,
-    pulls: "Contacts, deal history, lifecycle stage, and total revenue.",
-  },
+  // ── Payments ──────────────────────────────────────────────────────────────
   {
     id: "stripe",
     name: "Stripe",
-    description: "Import paying customers and their full payment history.",
+    description: "Import paying guests and their full payment history.",
     icon: "💳",
     oauth: true,
     live: true,
-    pulls: "Customer records, successful payments, and lifetime value.",
-  },
-  {
-    id: "salesforce",
-    name: "Salesforce",
-    description: "Import contacts and opportunities from your Salesforce CRM.",
-    icon: "☁️",
-    oauth: true,
-    live: false,
-    pulls: "Contacts, accounts, opportunity history, and revenue data.",
-  },
-  {
-    id: "pipedrive",
-    name: "Pipedrive",
-    description: "Sync contacts and deal history from Pipedrive.",
-    icon: "🔩",
-    oauth: true,
-    live: false,
-    pulls: "Contacts, deal stage, and closed deal values.",
-  },
-  // ── Field Service ─────────────────────────────────────────────────────────
-  {
-    id: "jobber",
-    name: "Jobber",
-    description: "Import clients and job history from your Jobber account.",
-    icon: "🔧",
-    oauth: true,
-    live: false,
-    pulls: "Client profiles, job history, invoice totals, and visit dates.",
-  },
-  {
-    id: "housecall",
-    name: "Housecall Pro",
-    description: "Sync customers and service history from Housecall Pro.",
-    icon: "🏠",
-    oauth: true,
-    live: false,
-    pulls: "Customer contacts, job history, and total billed.",
-  },
-  {
-    id: "servicetitan",
-    name: "ServiceTitan",
-    description: "Pull customer records and job history from ServiceTitan.",
-    icon: "⚙️",
-    oauth: true,
-    live: false,
-    pulls: "Customer profiles, service history, and revenue data.",
+    pulls: "Guest records, successful payments, and lifetime value.",
   },
   // ── Manual ────────────────────────────────────────────────────────────────
   {
     id: "manual",
     name: "Add manually",
-    description: "Enter customers one at a time. Good for a small starting list.",
+    description: "Enter guests one at a time. Good for a small starting list.",
     icon: "✍️",
     oauth: false,
     live: true,
@@ -308,48 +172,26 @@ export const DATA_SOURCES: DataSourceOption[] = [
 
 export const DATA_SOURCE_GROUPS: DataSourceGroup[] = [
   {
-    label: "POS Systems",
+    label: "Restaurant POS",
     sources: DATA_SOURCES.filter((s) => ["square", "clover", "toast", "lightspeed", "revel"].includes(s.id)),
   },
   {
-    label: "Booking & Scheduling",
-    sources: DATA_SOURCES.filter((s) => ["mindbody", "vagaro", "fresha", "acuity"].includes(s.id)),
-  },
-  {
-    label: "E-Commerce",
-    sources: DATA_SOURCES.filter((s) => ["shopify", "woocommerce", "bigcommerce"].includes(s.id)),
-  },
-  {
-    label: "CRM & Payments",
-    sources: DATA_SOURCES.filter((s) => ["hubspot", "stripe", "salesforce", "pipedrive"].includes(s.id)),
-  },
-  {
-    label: "Field Service",
-    sources: DATA_SOURCES.filter((s) => ["jobber", "housecall", "servicetitan"].includes(s.id)),
+    label: "Payments",
+    sources: DATA_SOURCES.filter((s) => ["stripe"].includes(s.id)),
   },
 ];
 
-export const INDUSTRIES = [
-  "Restaurant",
-  "Construction",
-  "Salon",
-  "Retail",
-  "Fitness",
-  "Healthcare",
-  "Legal",
-  "Real Estate",
-  "Other",
-];
+export const INDUSTRIES = ["Restaurant"];
 
 export const VOICES = ["Friendly", "Professional", "Casual", "Witty"];
 
 export const GOALS = [
-  "Re-engagement",
-  "Upsells",
-  "Review requests",
-  "Appointment reminders",
-  "Loyalty rewards",
-  "Win-back campaigns",
+  "Drive repeat visits",
+  "Increase average check",
+  "Fill slow nights",
+  "Win back lapsed guests",
+  "Get 5-star reviews",
+  "Promote specials & events",
 ];
 
 export const CADENCES = [

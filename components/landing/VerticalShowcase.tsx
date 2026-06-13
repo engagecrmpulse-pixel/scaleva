@@ -18,74 +18,60 @@ interface TabData {
 
 const TABS: TabData[] = [
   {
-    id: "restaurant",
-    label: "Restaurant",
+    id: "regular",
+    label: "The Regular",
     customerName: "Maria Chen",
     bizName: "Rosario's",
     rows: [
-      { label: "Last order",      value: "Truffle Pasta — $84" },
-      { label: "Visit frequency", value: "Every 11 days" },
-      { label: "Favorite items",  value: "Pasta, Italian reds" },
+      { label: "Last order",       value: "Truffle Pasta — $84" },
+      { label: "Visit frequency",  value: "Every 11 days" },
+      { label: "Favorite items",   value: "Pasta, Italian reds" },
       { label: "Days since visit", value: "14 days", blue: true },
-      { label: "Lifetime spend",  value: "$1,240" },
+      { label: "Lifetime spend",   value: "$1,240" },
     ],
     sms: "Hey Maria! It's been 14 days — the truffle pasta is back and we got a new Barolo you'd love. Come Thu/Fri, first glass on us. — Rosario's",
   },
   {
-    id: "salon",
-    label: "Salon",
+    id: "lapsed",
+    label: "Lapsed Guest",
     customerName: "James Park",
-    bizName: "Luxe Studio",
+    bizName: "Rosario's",
     rows: [
-      { label: "Last service",    value: "Balayage — $180" },
-      { label: "Frequency",       value: "Every 6 weeks" },
-      { label: "Hair type",       value: "Color-treated" },
-      { label: "Days since visit", value: "45 days", blue: true },
-      { label: "Lifetime spend",  value: "$890" },
+      { label: "Last order",       value: "Branzino — $72" },
+      { label: "Past frequency",   value: "Twice a month" },
+      { label: "Avg check",        value: "$130 / visit" },
+      { label: "Days since visit", value: "61 days", blue: true },
+      { label: "Lifetime spend",   value: "$2,100" },
     ],
-    sms: "Hi James! Your highlights were 6 weeks ago — time for a refresh? We have Thu/Fri openings. Book now, mention this text for a free gloss. 💇 — Luxe Studio",
+    sms: "James — it's been a couple months and we miss you. We just launched our spring tasting menu and saved you a reservation for Thursday. Come back? — Rosario's",
   },
   {
-    id: "construction",
-    label: "Construction",
-    customerName: "Mike Torres",
-    bizName: "BuildRight",
-    rows: [
-      { label: "Last project",    value: "Kitchen remodel" },
-      { label: "Project value",   value: "$12,400" },
-      { label: "Project type",    value: "Interior" },
-      { label: "Days since close", value: "62 days", blue: true },
-      { label: "Total spend",     value: "$18,600" },
-    ],
-    sms: "Hey Mike, been a while since the kitchen remodel. Spring is perfect for deck work — want a free estimate this month? Just reply YES. — BuildRight",
-  },
-  {
-    id: "retail",
-    label: "Retail",
+    id: "big_spender",
+    label: "High Spender",
     customerName: "Sarah Kim",
-    bizName: "Fleet Feet",
+    bizName: "Rosario's",
     rows: [
-      { label: "Last purchase",   value: "Nike Air Max — $120" },
-      { label: "Category",        value: "Athletic footwear" },
-      { label: "Frequency",       value: "Monthly" },
-      { label: "Days since visit", value: "21 days", blue: true },
-      { label: "Lifetime spend",  value: "$640" },
+      { label: "Last order",       value: "Wagyu + Reserve Cab" },
+      { label: "Avg check",        value: "$310 / visit" },
+      { label: "Visit frequency",  value: "Monthly" },
+      { label: "Days since visit", value: "28 days", blue: true },
+      { label: "Lifetime spend",   value: "$4,800" },
     ],
-    sms: "Hey Sarah! Your Air Max are 3 weeks old — the new colorway just dropped and it's exactly your style. Want first access? — Fleet Feet",
+    sms: "Sarah — Chef is doing a private 8-course dinner next Friday for 12 guests. We'd love to save you two seats before it opens up. Interested? — Rosario's",
   },
   {
-    id: "fitness",
-    label: "Fitness",
+    id: "first_timer",
+    label: "First-Timer",
     customerName: "David Torres",
-    bizName: "Iron Club",
+    bizName: "Rosario's",
     rows: [
-      { label: "Membership",      value: "Premium" },
-      { label: "Favorite class",  value: "HIIT" },
-      { label: "Longest streak",  value: "22 days" },
-      { label: "Days since visit", value: "18 days", blue: true },
-      { label: "Annual spend",    value: "$480" },
+      { label: "First visit",      value: "4 days ago" },
+      { label: "First order",      value: "Cacio e Pepe — $32" },
+      { label: "Source",           value: "Yelp referral" },
+      { label: "Days since visit", value: "4 days", blue: true },
+      { label: "Lifetime spend",   value: "$56" },
     ],
-    sms: "David! Your 22-day streak was impressive. It's been 18 days — your body misses HIIT 😤 Come back this week, we saved your spot. — Iron Club",
+    sms: "David, thanks for coming in on Saturday — so glad you found us! If you enjoyed the cacio e pepe, you'll love our Friday special. Hope to see you again soon. — Rosario's",
   },
 ];
 
@@ -212,7 +198,7 @@ export default function VerticalShowcase() {
               marginBottom: 14,
             }}
           >
-            Personalization
+            Guest Intelligence
           </p>
           <h2
             style={{
@@ -223,12 +209,12 @@ export default function VerticalShowcase() {
               lineHeight: 1.15,
             }}
           >
-            One thousand customers.
+            Every guest is different.
             <br />
-            One thousand different messages.
+            Every message should be too.
           </h2>
           <p style={{ marginTop: 14, fontSize: 16, color: "#888" }}>
-            No templates. Every message written from scratch.
+            No templates. Personalized from their order history, visit cadence, and spend.
           </p>
         </motion.div>
 
@@ -286,8 +272,7 @@ export default function VerticalShowcase() {
           >
             {/* Left — data card */}
             <div style={{ position: "relative" }}>
-              {/* Food objects (restaurant only) */}
-              <FoodObjects active={tab.id === "restaurant"} />
+              <FoodObjects active={true} />
 
               <div
                 style={{
@@ -343,7 +328,7 @@ export default function VerticalShowcase() {
                     <div style={{ fontWeight: 600, fontSize: 14, color: "#fff" }}>
                       {tab.customerName}
                     </div>
-                    <div style={{ fontSize: 12, color: "#888" }}>{tab.label} customer</div>
+                    <div style={{ fontSize: 12, color: "#888" }}>{tab.label} · Rosario&apos;s</div>
                   </div>
                 </div>
                 {/* Rows */}

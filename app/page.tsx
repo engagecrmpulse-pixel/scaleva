@@ -33,13 +33,13 @@ export default function LandingPage() {
           {/* Left: copy */}
           <div>
             <h1 className="font-heading text-4xl font-semibold leading-tight tracking-[-0.03em] text-content sm:text-5xl lg:text-[56px]">
-              Your customers forget you exist.{" "}
-              <span className="text-content-muted">Scaleva fixes that.</span>
+              Your best guests dined once and disappeared.{" "}
+              <span className="text-content-muted">Scaleva brings them back.</span>
             </h1>
             <p className="mt-6 max-w-lg text-base leading-relaxed text-content-muted">
-              Scaleva writes a personal SMS for each customer using their
-              purchase history and your brand voice, then sends it at the right
-              time. No templates. No blasting.
+              Scaleva writes a personal SMS for each guest — using what they
+              ordered, when they last visited, and your restaurant&apos;s voice —
+              then sends it at exactly the right moment. No templates. No blasting.
             </p>
             <div className="mt-8 flex items-center gap-4">
               <Link
@@ -67,11 +67,11 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[1200px] px-6 py-24">
           <div className="mb-12">
             <h2 className="font-heading text-2xl font-semibold tracking-[-0.03em] text-content">
-              Built for businesses that rely on repeat customers
+              Built for restaurants that run on regulars
             </h2>
             <p className="mt-2 text-base text-content-muted">
-              Salons, restaurants, contractors. If customers come back, Scaleva
-              keeps them coming back.
+              Fine dining, neighborhood bistros, cocktail bars, and brunch cafes.
+              If guests come back, Scaleva keeps them coming back.
             </p>
           </div>
 
@@ -94,15 +94,15 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3 className="font-heading text-xl font-semibold tracking-[-0.02em] text-content">
-                Knows your customers
+                Knows your guests
               </h3>
               <p className="mt-3 max-w-md text-base leading-relaxed text-content-muted">
-                Connect Square, Stripe, Shopify, or upload a CSV. Every message
-                Scaleva writes is grounded in what that customer actually bought
+                Connect Square, Toast, Clover, or upload a CSV. Every message
+                Scaleva writes is grounded in what that guest actually ordered
                 and when they last visited.
               </p>
               <div className="mt-8 overflow-hidden rounded-btn border border-line bg-base px-4 py-4 font-mono text-xs text-content-muted">
-                <p className="mb-2 text-content-muted/50">// customer context</p>
+                <p className="mb-2 text-content-muted/50">// guest context</p>
                 <p>
                   <span className="text-accent">name</span>: &ldquo;Maria
                   C.&rdquo;
@@ -112,11 +112,11 @@ export default function LandingPage() {
                   days ago&rdquo;
                 </p>
                 <p>
-                  <span className="text-accent">spent</span>: &ldquo;$412.00&rdquo;
+                  <span className="text-accent">last_order</span>: &ldquo;Truffle Pasta, Barolo&rdquo;
                 </p>
                 <p>
                   <span className="text-accent">tags</span>: [&ldquo;regular&rdquo;,
-                  &ldquo;color-client&rdquo;]
+                  &ldquo;wine-lover&rdquo;]
                 </p>
               </div>
             </div>
@@ -139,11 +139,11 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3 className="font-heading text-base font-semibold tracking-[-0.02em] text-content">
-                Writes in your voice
+                Writes in your restaurant&apos;s voice
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-content-muted">
-                Tell Scaleva your industry and tone once. Every message sounds
-                like you wrote it, not a template.
+                Tell Scaleva your tone once — warm, upscale, casual, playful.
+                Every message sounds like it came from you, not a template.
               </p>
             </div>
 
@@ -165,11 +165,11 @@ export default function LandingPage() {
                 </svg>
               </div>
               <h3 className="font-heading text-base font-semibold tracking-[-0.02em] text-content">
-                Runs without you
+                Runs while you&apos;re in service
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-content-muted">
                 Set your cadence and goals once. Scaleva handles the timing,
-                tracks replies, and never double-sends.
+                tracks replies, and fills your slow nights automatically.
               </p>
             </div>
           </div>

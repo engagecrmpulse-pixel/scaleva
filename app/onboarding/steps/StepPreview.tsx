@@ -13,19 +13,17 @@ interface DemoCustomer {
   detail: string;
 }
 
-const INDUSTRY_CUSTOMERS: Record<string, DemoCustomer> = {
-  Restaurant: { name: "Maria Santos", initials: "MS", lastPurchase: "7 weeks ago", spent: "$284", daysSince: 49, detail: "6 visits · usually orders pasta · dines on Fridays" },
-  Salon: { name: "Jennifer Kim", initials: "JK", lastPurchase: "8 weeks ago", spent: "$610", daysSince: 56, detail: "9 visits · balayage client · 6–8 week refresh cycle" },
-  Retail: { name: "Ashley Moore", initials: "AM", lastPurchase: "6 weeks ago", spent: "$340", daysSince: 42, detail: "4 orders · athleisure preference · referred 1 friend" },
-  Fitness: { name: "Brandon Lee", initials: "BL", lastPurchase: "10 weeks ago", spent: "$480", daysSince: 70, detail: "monthly member · HIIT classes · 3× per week" },
-  Healthcare: { name: "Robert Davis", initials: "RD", lastPurchase: "11 months ago", spent: "$820", daysSince: 335, detail: "annual patient · last visit was annual physical" },
-  "Home Services": { name: "Robert Dixon", initials: "RD", lastPurchase: "11 months ago", spent: "$820", daysSince: 335, detail: "annual HVAC tune-up customer · AC unit 6 years old" },
+const DEMO_CUSTOMER: DemoCustomer = {
+  name: "Maria Santos",
+  initials: "MS",
+  lastPurchase: "7 weeks ago",
+  spent: "$1,240",
+  daysSince: 49,
+  detail: "14 visits · usually orders pasta · dines on Fridays · top 5% guest",
 };
 
-const DEFAULT_CUSTOMER: DemoCustomer = { name: "Alex Johnson", initials: "AJ", lastPurchase: "6 weeks ago", spent: "$145", daysSince: 42, detail: "repeat customer · hasn't visited in a while" };
-
-function getDemoCustomer(industry: string): DemoCustomer {
-  return INDUSTRY_CUSTOMERS[industry] ?? DEFAULT_CUSTOMER;
+function getDemoCustomer(_industry: string): DemoCustomer {
+  return DEMO_CUSTOMER;
 }
 
 function buildDemoParams(state: StepProps["state"]): OutreachParams {

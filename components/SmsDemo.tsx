@@ -4,20 +4,20 @@ import { useState, useEffect, useCallback } from "react";
 
 const SCENARIOS = [
   {
-    tab: "Restaurant",
-    icon: "🍽️",
+    tab: "The Regular",
+    icon: "🍝",
     business: "Bella Cucina",
     customer: {
       name: "Maria S.",
       initial: "M",
       lastVisit: "47 days ago",
-      totalSpend: "$284",
-      visits: 6,
+      totalSpend: "$1,240",
+      visits: 14,
     },
     triggerReasons: [
       "47 days since last visit — lapse threshold hit",
-      "6-visit regular, avg $47/visit — high-value",
-      "Historically dines on Fridays with husband",
+      "14-visit regular, avg $89/visit — top 5% guest",
+      "Historically dines on Fridays with her husband",
     ],
     message:
       "Hey Maria! It's been a bit — miss having you at Bella Cucina 🍝 We just added a truffle tagliatelle that has your name on it. Come in this week and we'll take care of you.",
@@ -25,91 +25,91 @@ const SCENARIOS = [
     reply:
       "Oh my gosh we were JUST talking about coming back! Booking for Friday 😍",
     replyTime: "6:18 PM",
-    result: "Reservation made · $96 visit 3 days later",
+    result: "Reservation confirmed · $174 dinner 3 days later",
     resultSub: "6-minute response time",
     resultColor: "border-orange-400/30 bg-orange-400/5",
     dotColor: "bg-orange-400",
   },
   {
-    tab: "Salon",
-    icon: "✂️",
-    business: "Gloss Studio",
+    tab: "Lapsed Guest",
+    icon: "🕐",
+    business: "Rosario's",
     customer: {
-      name: "Jennifer K.",
+      name: "James P.",
       initial: "J",
-      lastVisit: "8 weeks ago",
-      totalSpend: "$610",
-      visits: 9,
+      lastVisit: "9 weeks ago",
+      totalSpend: "$2,100",
+      visits: 18,
     },
     triggerReasons: [
-      "8 weeks since balayage — typical refresh cycle",
-      "Top 10% spender · 9 visits · $68 avg",
-      "Summer color window — pre-heat damage timing",
+      "9 weeks — twice his normal 4-week cadence",
+      "18-visit loyal guest · $117 avg check · top spender",
+      "Spring tasting menu launched — perfect reactivation hook",
     ],
     message:
-      "Hi Jennifer! Your balayage is probably due for a refresh about now 💇‍♀️ We just got in Olaplex Bond Builder — perfect timing for summer. Want me to grab you a spot this week?",
-    outTime: "10:04 AM",
+      "James — it's been a couple months and we miss you. We just launched our spring tasting menu (7 courses, $95/person) and saved you a reservation for Thursday. Come back? — Rosario's",
+    outTime: "4:45 PM",
     reply:
-      "Yes please! Do you have anything Thursday afternoon? My ends are SO dry lol",
-    replyTime: "10:09 AM",
-    result: "Appointment booked · $135 service",
-    resultSub: "5-minute response time",
-    resultColor: "border-pink-400/30 bg-pink-400/5",
-    dotColor: "bg-pink-400",
-  },
-  {
-    tab: "HVAC",
-    icon: "🔧",
-    business: "ProComfort HVAC",
-    customer: {
-      name: "Robert D.",
-      initial: "R",
-      lastVisit: "11 months ago",
-      totalSpend: "$820",
-      visits: 3,
-    },
-    triggerReasons: [
-      "Annual maintenance window — 11 months elapsed",
-      "Pre-summer inspection timing · AC unit is 6 yrs old",
-      "3-visit loyal customer — knows the tech by name",
-    ],
-    message:
-      "Hey Robert, this is ProComfort — your AC tune-up from last year is coming up on its annual. Best time to catch anything before the summer heat hits. Want us to schedule your 21-point inspection? Same tech as last time.",
-    outTime: "9:30 AM",
-    reply:
-      "Good timing actually — yes please. Can you do next Tuesday morning?",
-    replyTime: "9:47 AM",
-    result: "Inspection booked · $189 · prevented $1,400 repair",
-    resultSub: "17-minute response time",
+      "We've been meaning to come back! Thursday works, 2 people at 7:30?",
+    replyTime: "4:52 PM",
+    result: "Tasting menu booked · $190 table",
+    resultSub: "7-minute response time",
     resultColor: "border-blue-400/30 bg-blue-400/5",
     dotColor: "bg-blue-400",
   },
   {
-    tab: "Boutique",
-    icon: "🛍️",
-    business: "Blue Pine Co.",
+    tab: "Slow Night",
+    icon: "🌙",
+    business: "The Local",
     customer: {
-      name: "Ashley M.",
-      initial: "A",
-      lastVisit: "6 weeks ago",
-      totalSpend: "$340",
-      visits: 4,
+      name: "Sophie L.",
+      initial: "S",
+      lastVisit: "22 days ago",
+      totalSpend: "$620",
+      visits: 8,
     },
     triggerReasons: [
-      "6-week lapse + spring drop just restocked",
-      "3 of 4 purchases were athleisure — sage / neutral palette",
-      "Referred a friend on her last visit",
+      "Tuesday at 4 PM — slow night outreach window",
+      "8-visit guest · usually comes Thu/Fri · flexible on timing",
+      "New seasonal cocktail menu launched — strong hook",
     ],
     message:
-      "Ashley! Our spring drop just landed and I immediately thought of you — new modal joggers in sage with a matching boxy tee. Your exact vibe 🌿 Free shipping through Sunday if you want to grab them.",
-    outTime: "2:15 PM",
+      "Sophie — Tuesday is our slow night and we're doing $8 craft drafts + the short rib special. Perfect excuse to come back. It's been 3 weeks — see you at 7?",
+    outTime: "4:30 PM",
     reply:
-      "Already in my cart 😂 sending to my friend too she'll love these",
-    replyTime: "2:19 PM",
-    result: "$128 order placed · 1 new customer referred",
-    resultSub: "4-minute response time",
+      "You got me 😂 Can we get a table for 4? Bringing friends.",
+    replyTime: "4:38 PM",
+    result: "Party of 4 · $210 table on a Tuesday",
+    resultSub: "8-minute response time",
     resultColor: "border-emerald-400/30 bg-emerald-400/5",
     dotColor: "bg-emerald-400",
+  },
+  {
+    tab: "First-Timer",
+    icon: "✨",
+    business: "Sunday Press",
+    customer: {
+      name: "Alex M.",
+      initial: "A",
+      lastVisit: "4 days ago",
+      totalSpend: "$56",
+      visits: 1,
+    },
+    triggerReasons: [
+      "First visit was 4 days ago — perfect conversion window",
+      "First-timers who hear back within a week convert at 3× rate",
+      "Bottomless brunch launching this Sunday — strong group hook",
+    ],
+    message:
+      "Alex, thanks for coming in Saturday — so glad you found us! This Sunday we're doing a bottomless brunch ($38/person, 10–1). Thought you'd want to know first. — Sunday Press",
+    outTime: "9:15 AM",
+    reply:
+      "Yes!! Can we get the patio? Party of 6 😍",
+    replyTime: "9:22 AM",
+    result: "Patio booking · $228 brunch · 6 new guests",
+    resultSub: "7-minute response time",
+    resultColor: "border-pink-400/30 bg-pink-400/5",
+    dotColor: "bg-pink-400",
   },
 ];
 
@@ -150,11 +150,11 @@ export default function SmsDemo() {
             Live demo
           </span>
           <h2 className="mt-4 font-heading text-2xl font-semibold tracking-[-0.03em] text-content sm:text-3xl">
-            Every message feels like it was written just for them
+            Every guest gets a message written just for them
           </h2>
           <p className="mt-3 text-base text-content-muted">
-            Because it was. Scaleva reads your customer history and writes
-            something they&apos;ll actually respond to.
+            Because it was. Scaleva reads their order history and visit cadence and writes
+            something they&apos;ll actually act on.
           </p>
         </div>
 
@@ -189,7 +189,7 @@ export default function SmsDemo() {
             {/* Customer profile */}
             <div className="rounded-card border border-line bg-surface p-6">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-content-muted">
-                Customer profile
+                Guest profile
               </p>
               <div className="mb-5 flex items-center gap-4">
                 <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-accent/10 font-heading text-base font-bold text-accent">

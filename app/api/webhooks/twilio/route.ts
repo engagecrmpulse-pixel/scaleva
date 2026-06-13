@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       // Build rich business context for the AI
       const menuItems = menuItemRows ?? [];
       const menuSection = menuItems.length > 0
-        ? `\n\nYOUR ${business.industry === "Restaurant" ? "MENU" : business.industry === "Salon" ? "SERVICES" : "OFFERINGS"} (reference when relevant):\n` +
+        ? `\n\nYOUR MENU (reference when relevant):\n` +
           menuItems.map((i) => {
             let line = `- ${i.name}`;
             if (i.category) line += ` [${i.category}]`;

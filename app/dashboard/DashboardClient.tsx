@@ -952,7 +952,7 @@ export function DashboardClient({
                   ? `${atRiskCount} customer${atRiskCount !== 1 ? "s" : ""} need attention`
                   : autopilot
                   ? "Autopilot is running"
-                  : `${industry ?? "Business"} · ${voice ?? "Friendly"} voice`}
+                  : `Restaurant · ${voice ?? "Friendly"} voice`}
               </span>
             </div>
             <div className="ml-auto flex items-center gap-3">
@@ -1521,7 +1521,7 @@ export function DashboardClient({
                   <div className="mb-4 flex items-center justify-between">
                     <div>
                       <h3 className="font-heading text-sm font-semibold text-content">
-                        {industry === "Restaurant" ? "Menu Intelligence" : industry === "Salon" ? "Service Intelligence" : "Product Intelligence"}
+                        Menu Intelligence
                       </h3>
                       <p className="mt-0.5 text-xs text-content-muted">
                         {menuMentions.length > 0
@@ -1597,7 +1597,7 @@ export function DashboardClient({
                   {menuMentions.length === 0 && (
                     <div className="mt-2 rounded-btn border border-dashed border-line p-4 text-center">
                       <p className="text-xs text-content-muted">
-                        Mention data will appear here as customers reply to your messages and reference your {industry === "Restaurant" ? "dishes" : industry === "Salon" ? "services" : "products"}.
+                        Mention data will appear here as guests reply to your messages and reference your dishes.
                       </p>
                     </div>
                   )}

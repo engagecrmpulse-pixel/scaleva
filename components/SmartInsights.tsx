@@ -89,7 +89,7 @@ export function SmartInsights({
       id: "uncontacted",
       type: "opportunity",
       title: `${uncontactedCount} customer${uncontactedCount !== 1 ? "s" : ""} haven't been reached`,
-      body: "Activate Scaleva's retention engine — most businesses see 15–25% of messaged customers return within 30 days.",
+      body: "Activate Scaleva's retention engine — most restaurants see 15–25% of messaged guests return within 30 days.",
       actionLabel: "View customers",
       onAction: onViewCustomers,
     });
@@ -100,7 +100,7 @@ export function SmartInsights({
       id: "at_risk_no_autopilot",
       type: "warning",
       title: `${atRiskCount} customer${atRiskCount !== 1 ? "s" : ""} are drifting away`,
-      body: "Enable autopilot to reach at-risk customers automatically before they stop coming back.",
+      body: "Enable autopilot to reach at-risk guests automatically before they stop coming back.",
       actionLabel: "Enable autopilot",
       onAction: onEnableAutopilot,
     });
@@ -111,7 +111,7 @@ export function SmartInsights({
       id: "win_back",
       type: "tip",
       title: "Win-back sequences are off",
-      body: "Businesses with sequences recover 3× more lapsed customers automatically — enable in 10 seconds.",
+      body: "Restaurants with sequences recover 3× more lapsed guests automatically — enable in 10 seconds.",
       actionLabel: "Enable sequences",
       actionHref: "/settings",
     });
@@ -122,7 +122,7 @@ export function SmartInsights({
       id: "review_requests",
       type: "opportunity",
       title: `${returnedCount} returning customer${returnedCount !== 1 ? "s" : ""} could become reviewers`,
-      body: "Set up automated review requests to turn happy returning customers into 5-star Google reviews.",
+      body: "Set up automated review requests to turn happy returning guests into 5-star Google and Yelp reviews.",
       actionLabel: "Configure reviews",
       actionHref: "/settings",
     });
@@ -133,7 +133,7 @@ export function SmartInsights({
       id: "auto_reply",
       type: "tip",
       title: "AI auto-reply is disabled",
-      body: "Respond to customers 24/7 automatically. Faster replies = higher satisfaction and more return visits.",
+      body: "Respond to guests 24/7 automatically. Faster replies = higher satisfaction and more return covers.",
       actionLabel: "Enable auto-reply",
       actionHref: "/settings",
     });
@@ -155,7 +155,7 @@ export function SmartInsights({
       id: "custom_instructions",
       type: "tip",
       title: "Your AI could sound more like you",
-      body: "Add custom instructions — current offers, brand rules, or seasonal context — to make every message feel hand-crafted.",
+      body: "Add custom instructions — current specials, reservation notes, or seasonal menus — to make every message feel hand-crafted.",
       actionLabel: "Customize AI",
       actionHref: "/settings",
     });

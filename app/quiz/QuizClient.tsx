@@ -20,30 +20,15 @@ interface Question {
 
 const QUESTIONS: Question[] = [
   {
-    id: "industry",
-    text: "What type of business do you run?",
-    subtext: "We'll tailor everything — your AI voice, timing, and messaging style — to your industry.",
-    columns: 2,
-    answers: [
-      { label: "Restaurant / Cafe / Bar", value: "Restaurant", emoji: "🍽️" },
-      { label: "Salon / Spa / Barbershop", value: "Salon", emoji: "✂️" },
-      { label: "Retail Store", value: "Retail", emoji: "🛍️" },
-      { label: "Fitness / Gym / Studio", value: "Fitness", emoji: "💪" },
-      { label: "Home Services / Construction", value: "Construction", emoji: "🔨" },
-      { label: "Healthcare / Wellness", value: "Healthcare", emoji: "❤️" },
-      { label: "Other Local Business", value: "Other", emoji: "🏪" },
-    ],
-  },
-  {
     id: "size",
-    text: "How many active customers do you have?",
-    subtext: "An estimate is fine — this helps us set realistic goals for you.",
+    text: "How many active guests do you have?",
+    subtext: "An estimate is fine — this helps us set realistic goals for your restaurant.",
     columns: 2,
     answers: [
-      { label: "Just starting out", value: "under_100", emoji: "🌱" },
+      { label: "Just getting started", value: "under_100", emoji: "🌱" },
       { label: "Growing — 100 to 500", value: "100_500", emoji: "📈" },
       { label: "Established — 500 to 2,000", value: "500_2000", emoji: "🏆" },
-      { label: "Thriving — 2,000+", value: "over_2000", emoji: "🚀" },
+      { label: "Busy — 2,000+", value: "over_2000", emoji: "🚀" },
     ],
   },
   {
@@ -52,28 +37,28 @@ const QUESTIONS: Question[] = [
     subtext: "Be honest — this shapes what your AI focuses on first.",
     columns: 1,
     answers: [
-      { label: "Getting customers to come back after their first visit", value: "retention" },
-      { label: "Converting one-time visitors into regulars", value: "conversion" },
-      { label: "Standing out against bigger competitors", value: "competition" },
-      { label: "Growing word-of-mouth and referrals", value: "referrals" },
+      { label: "Getting first-time diners to come back", value: "retention" },
+      { label: "Filling slow nights and dead covers", value: "slow_nights" },
+      { label: "Standing out against nearby competition", value: "competition" },
+      { label: "Growing word-of-mouth and group bookings", value: "referrals" },
     ],
   },
   {
     id: "frequency",
-    text: "How often do customers typically return?",
+    text: "How often do your guests typically return?",
     subtext: "This tells us how urgently to reach out — and when.",
     columns: 2,
     answers: [
       { label: "Weekly or more", value: "weekly", emoji: "🔁" },
       { label: "Once or twice a month", value: "monthly", emoji: "📅" },
       { label: "Every few months", value: "quarterly", emoji: "🗓️" },
-      { label: "Rarely — mostly one-time", value: "rarely", emoji: "⏳" },
+      { label: "Mostly one-time visits", value: "rarely", emoji: "⏳" },
     ],
   },
   {
     id: "current_followup",
-    text: "How do you currently stay in touch with customers?",
-    subtext: "No judgment — most business owners don't have time for this.",
+    text: "How do you currently stay in touch with guests?",
+    subtext: "No judgment — most restaurant owners don't have time for this.",
     columns: 1,
     answers: [
       { label: "I don't — there's no system in place", value: "none" },
@@ -84,7 +69,7 @@ const QUESTIONS: Question[] = [
   },
   {
     id: "ltv",
-    text: "What's a typical customer worth over their lifetime?",
+    text: "What's a typical guest worth over their lifetime?",
     subtext: "This is how we calculate the revenue impact Scaleva can unlock for you.",
     columns: 2,
     answers: [
@@ -96,24 +81,24 @@ const QUESTIONS: Question[] = [
   },
   {
     id: "discovery",
-    text: "How do most new customers find you?",
+    text: "How do most new guests find you?",
     subtext: "Understanding this helps us know what to say when we re-engage them.",
     columns: 2,
     answers: [
       { label: "Word of mouth / referrals", value: "referral", emoji: "🗣️" },
-      { label: "Google / local search", value: "google", emoji: "🔍" },
-      { label: "Social media", value: "social", emoji: "📱" },
+      { label: "Google / Yelp / local search", value: "google", emoji: "🔍" },
+      { label: "Social media / Instagram", value: "social", emoji: "📱" },
       { label: "Walk-in / foot traffic", value: "walkin", emoji: "🚶" },
     ],
   },
   {
     id: "voice",
     text: "How do you want your messages to sound?",
-    subtext: "Your customers will feel like you wrote every single one.",
+    subtext: "Your guests will feel like you wrote every single one.",
     columns: 1,
     answers: [
       { label: "Warm and personal — like a message from a friend", value: "Friendly" },
-      { label: "Professional and polished", value: "Professional" },
+      { label: "Upscale and polished", value: "Professional" },
       { label: "Fun and a little playful", value: "Casual" },
       { label: "Short and direct — no fluff", value: "Witty" },
     ],
@@ -124,34 +109,34 @@ const QUESTIONS: Question[] = [
     subtext: "This becomes your AI's primary mission.",
     columns: 1,
     answers: [
-      { label: "More repeat visits from existing customers", value: "retention" },
-      { label: "Higher average spend per visit", value: "upsell" },
-      { label: "More 5-star reviews", value: "reviews" },
-      { label: "Filling slow periods and dead hours", value: "slow_periods" },
+      { label: "More repeat covers from existing guests", value: "retention" },
+      { label: "Higher average check per visit", value: "upsell" },
+      { label: "More 5-star reviews on Google and Yelp", value: "reviews" },
+      { label: "Filling slow nights and off-peak hours", value: "slow_periods" },
     ],
   },
   {
     id: "loyalty",
-    text: "Do you currently offer any loyalty rewards or promotions?",
+    text: "Do you currently offer any specials or loyalty perks?",
     subtext: "Scaleva can weave these into every message automatically.",
     columns: 1,
     answers: [
       { label: "Not yet — but I'd like to", value: "want_to" },
-      { label: "Yes, but informally — I make it up as I go", value: "informal" },
-      { label: "Yes, I have a real loyalty program", value: "formal" },
+      { label: "Yes, informally — happy hour, verbal deals", value: "informal" },
+      { label: "Yes, I have a real loyalty or rewards program", value: "formal" },
       { label: "No — I don't do promotions", value: "none" },
     ],
   },
   {
     id: "send_time",
-    text: "When are your customers most likely to engage?",
-    subtext: "We'll automatically send messages when they're most likely to open them.",
+    text: "When are your guests most likely to decide where to eat?",
+    subtext: "We'll automatically send messages when they're most likely to act on them.",
     columns: 2,
     answers: [
-      { label: "Morning", value: "morning", emoji: "☀️" },
-      { label: "Midday", value: "midday", emoji: "🌤️" },
-      { label: "Afternoon", value: "afternoon", emoji: "⛅" },
-      { label: "Evening", value: "evening", emoji: "🌙" },
+      { label: "Late morning (brunch crowd)", value: "morning", emoji: "☀️" },
+      { label: "Midday (lunch planners)", value: "midday", emoji: "🌤️" },
+      { label: "Afternoon (dinner decision time)", value: "afternoon", emoji: "⛅" },
+      { label: "Evening (last-minute diners)", value: "evening", emoji: "🌙" },
     ],
   },
   {
@@ -168,22 +153,13 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-const INDUSTRY_LABELS: Record<string, string> = {
-  Restaurant: "Restaurant / Cafe",
-  Salon: "Salon / Spa",
-  Retail: "Retail",
-  Fitness: "Fitness",
-  Construction: "Home Services",
-  Healthcare: "Healthcare",
-  Other: "Local Business",
-};
 
 
 const GOAL_LABELS: Record<string, string> = {
-  retention: "More repeat visits",
-  upsell: "Higher average spend",
+  retention: "More repeat covers",
+  upsell: "Higher average check",
   reviews: "More 5-star reviews",
-  slow_periods: "Filling slow periods",
+  slow_periods: "Filling slow nights",
 };
 
 const VOICE_LABELS: Record<string, string> = {
@@ -209,20 +185,19 @@ function ResultsScreen({ answers }: { answers: Record<string, string> }) {
     return () => clearTimeout(t);
   }, []);
 
-  const industry = answers.industry ?? "Other";
   const goal = answers.goal ?? "retention";
   const voice = answers.voice ?? "Friendly";
   const sendTime = answers.send_time ?? "evening";
 
   function goSignup() {
     try {
-      localStorage.setItem("scaleva_quiz_answers", JSON.stringify(answers));
+      localStorage.setItem("scaleva_quiz_answers", JSON.stringify({ ...answers, industry: "Restaurant" }));
     } catch {}
     router.push("/signup");
   }
 
   const profileItems = [
-    { label: "Business type", value: INDUSTRY_LABELS[industry] ?? industry },
+    { label: "Business type", value: "Restaurant" },
     { label: "AI voice", value: VOICE_LABELS[voice] ?? voice },
     { label: "Primary goal", value: GOAL_LABELS[goal] ?? goal },
     { label: "Best send time", value: TIME_LABELS[sendTime] ?? sendTime },
@@ -322,7 +297,7 @@ function BuildingScreen() {
 
 export function QuizClient() {
   const [currentQ, setCurrentQ] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({ industry: "Restaurant" });
   const [selected, setSelected] = useState<string | null>(null);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [visible, setVisible] = useState(true);
