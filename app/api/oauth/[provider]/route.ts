@@ -9,7 +9,7 @@ const PROVIDER_AUTH_URLS: Record<
   (redirectUri: string, state: string) => string
 > = {
   square: (redirectUri, state) =>
-    `https://connect.squareup.com/oauth2/authorize?client_id=${process.env.SQUARE_CLIENT_ID}&scope=CUSTOMERS_READ+CUSTOMERS_WRITE+ORDERS_READ+LOYALTY_READ&session=false&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`,
+    `https://connect.squareup.com/oauth2/authorize?client_id=${process.env.SQUARE_CLIENT_ID}&scope=CUSTOMERS_READ+CUSTOMERS_WRITE+ORDERS_READ+LOYALTY_READ+ITEMS_READ+MERCHANT_PROFILE_READ&session=false&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`,
 };
 
 export async function GET(
