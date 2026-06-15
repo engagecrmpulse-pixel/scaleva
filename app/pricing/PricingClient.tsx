@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface FlatPlan {
@@ -101,6 +101,12 @@ interface PricingClientProps {
 }
 
 export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
+  const [unlocked, setUnlocked] = useState(false);
+  const [showCodeInput, setShowCodeInput] = useState(false);
+  const [gateCode, setGateCode] = useState("");
+  const [gateVerifying, setGateVerifying] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [annual, setAnnual] = useState(false);
@@ -110,6 +116,35 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
   const [bypassLoading, setBypassLoading] = useState(false);
   const [bypassError, setBypassError] = useState<string | null>(null);
   const [bypassSuccess, setBypassSuccess] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("pricing_unlocked") === "1") {
+      setUnlocked(true);
+    }
+  }, []);
+
+  async function verifyGateCode() {
+    if (!gateCode.trim()) return;
+    setGateVerifying(true);
+    setGateError(null);
+    try {
+      const res = await fetch("/api/pricing/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: gateCode.trim() }),
+      });
+      if (!res.ok) {
+        setGateError("Invalid access code.");
+        setGateVerifying(false);
+        return;
+      }
+      localStorage.setItem("pricing_unlocked", "1");
+      setUnlocked(true);
+    } catch {
+      setGateError("Something went wrong. Try again.");
+    }
+    setGateVerifying(false);
+  }
 
   async function applyBypass() {
     setBypassLoading(true);
@@ -147,6 +182,84 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
   }
 
   const isCurrent = (planId: string) => currentPlan === planId;
+
+  // Existing subscribers skip the gate — they need access for subscription management
+  const showPricing = currentPlan || unlocked;
+
+  if (!showPricing) {
+    return (
+      <div className="flex min-h-screen flex-col" style={{ background: "#f0f2f8" }}>
+        <div className="border-b border-gray-200/60 bg-white px-6 py-5">
+          <div className="mx-auto max-w-5xl">
+            <Link href="/" className="font-heading text-sm font-semibold tracking-tight text-gray-900">Scaleva</Link>
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col items-center justify-center px-4 py-24 text-center">
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+            <svg className="h-7 w-7 text-gray-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+
+          <h1 className="font-heading text-3xl font-bold tracking-[-0.03em] text-gray-900">
+            Scaleva is in private development
+          </h1>
+          <p className="mt-3 max-w-sm text-gray-500">
+            We&apos;re still building. Pricing is not publicly available yet — we&apos;re in a closed iteration phase and not accepting new signups at this time.
+          </p>
+          <p className="mt-4 text-sm text-gray-400">
+            Check back soon, or reach out at{" "}
+            <a href="mailto:engagecrmpulse@gmail.com" className="text-blue-600 hover:underline">engagecrmpulse@gmail.com</a>
+            {" "}if you&apos;re interested.
+          </p>
+
+          {!showCodeInput ? (
+            <button
+              type="button"
+              onClick={() => setShowCodeInput(true)}
+              className="mt-12 text-xs text-gray-400 hover:text-gray-600 transition-colors underline underline-offset-2"
+            >
+              Have an access code?
+            </button>
+          ) : (
+            <div className="mt-8 w-full max-w-xs">
+              <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 text-left">
+                <p className="mb-3 text-sm font-semibold text-gray-900">Enter access code</p>
+                <input
+                  type="text"
+                  value={gateCode}
+                  onChange={(e) => setGateCode(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") void verifyGateCode(); }}
+                  placeholder="Access code"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  autoFocus
+                />
+                {gateError && <p className="mt-2 text-xs text-red-500">{gateError}</p>}
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowCodeInput(false); setGateCode(""); setGateError(null); }}
+                    className="flex-1 rounded-xl border border-gray-200 py-2 text-sm font-medium text-gray-500 hover:border-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void verifyGateCode()}
+                    disabled={!gateCode.trim() || gateVerifying}
+                    className="flex-1 rounded-xl bg-blue-600 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {gateVerifying ? "Checking…" : "Unlock"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "#f0f2f8" }}>
