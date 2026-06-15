@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
     publicRoutes.some((r) => pathname === r || pathname.startsWith(`${r}/`)) ||
     webhookRoutes.some((r) => pathname.startsWith(r));
 
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute && !pathname.startsWith("/api/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

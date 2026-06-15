@@ -34,6 +34,6 @@ export default async function PricingPage() {
   }
 
   return (
-    <PricingClient currentPlan={currentPlan} isPastDue={isPastDue} />
+    <PricingClient currentPlan={currentPlan} isPastDue={isPastDue} isLoggedIn={!!user} />
   );
 }

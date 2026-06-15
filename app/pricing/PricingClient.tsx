@@ -98,9 +98,10 @@ function PlanCheckIcon({ highlight }: { highlight: boolean }) {
 interface PricingClientProps {
   currentPlan: string | null;
   isPastDue: boolean;
+  isLoggedIn?: boolean;
 }
 
-export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
+export function PricingClient({ currentPlan, isPastDue, isLoggedIn = false }: PricingClientProps) {
   const [unlocked, setUnlocked] = useState(false);
   const [showCodeInput, setShowCodeInput] = useState(false);
   const [gateCode, setGateCode] = useState("");
@@ -183,8 +184,9 @@ export function PricingClient({ currentPlan, isPastDue }: PricingClientProps) {
 
   const isCurrent = (planId: string) => currentPlan === planId;
 
-  // Existing subscribers skip the gate — they need access for subscription management
-  const showPricing = currentPlan || unlocked;
+  // Logged-in users always see pricing (they need it to subscribe after onboarding)
+  // The gate only applies to unauthenticated visitors who stumble on the page
+  const showPricing = currentPlan || unlocked || isLoggedIn;
 
   if (!showPricing) {
     return (
